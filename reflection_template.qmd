@@ -22,7 +22,7 @@ execute:
 
 ```{r}
 #| label: wd-1-csv-1
-
+surveys <- read_csv(here::here("week 2", "surveys.csv"))
 ```
 
 -   `csv` Example 2

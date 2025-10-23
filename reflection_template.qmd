@@ -21,15 +21,15 @@ execute:
 -   `csv` Example 1
 
 ```{r}
-#| label: wd-1-csv-1
+#| label: Lab 2, Question 1
 surveys <- read_csv(here::here("week 2", "surveys.csv"))
 ```
 
 -   `csv` Example 2
 
 ```{r}
-#| label: wd-1-csv-2
-
+#| label: Lab 3, Question 2
+evals <- read_csv(here::here("week 3", "teacher_evals.csv"))
 ```
 
 -   `xlsx`
@@ -44,14 +44,21 @@ surveys <- read_csv(here::here("week 2", "surveys.csv"))
 -   Example selecting specified columns
 
 ```{r}
-#| label: wd-2-ex-1
-
+#| label: Lab 3, Question 5
+teacher_evals_clean <- evals |>
+  rename (sex = gender) |>
+  mutate (teacher_id = as.character (teacher_id)) |>
+  filter(no_participants >= 10) |>
+  select (course_id, teacher_id, question_no, no_participants, 
+         resp_share, SET_score_avg, percent_failed_cur, 
+         academic_degree, seniority, sex) 
 ```
 
 -   Example removing specified columns
 
 ```{r}
 #| label: wd-2-ex-2
+
 
 ```
 
@@ -60,6 +67,7 @@ surveys <- read_csv(here::here("week 2", "surveys.csv"))
 ```{r}
 #| label: wd-2-ex-3
 
+
 ```
 
 **WD-3: I can filter rows from a dataframe for a *variety* of data types (e.g., numeric, integer, character, factor, date).**
@@ -67,22 +75,43 @@ surveys <- read_csv(here::here("week 2", "surveys.csv"))
 -   Numeric Example 1
 
 ```{r}
-#| label: wd-3-numeric-ex-1
+#| label: Lab 3, Question 4
+evals |>
+  count(course_id, teacher_id, question_no) |>
+  filter(n == 1)
 
 ```
 
 -   Numeric Example 2
 
 ```{r}
-#| label: wd-3-numeric-ex-1
+#| label: Lab 3, Question 5
+teacher_evals_clean <- evals |>
+  rename (sex = gender) |>
+  mutate (teacher_id = as.character (teacher_id)) |>
+  filter(no_participants >= 10) |>
+  select (course_id, teacher_id, question_no, no_participants, 
+         resp_share, SET_score_avg, percent_failed_cur, 
+         academic_degree, seniority, sex) 
+
 
 ```
 
 -   Character Example 1 (any context)
 
 ```{r}
-#| label: wd-3-character
-
+#| label: Lab 3, Question 12
+teacher_evals_clean |>
+  filter (academic_degree %in% 
+            c ("dr", "prof")) |>
+  group_by(teacher_id, seniority, sex) |>
+  summarize (
+     resp_students =  mean(resp_share, na.rm = TRUE),
+     .groups = "drop") |>
+   filter( resp_students == min(resp_students) |
+           resp_students == max (resp_students)) |>
+  arrange (resp_students) 
+  
 ```
 
 -   Character Example 2 (example must use functions from **stringr**)
@@ -148,7 +177,16 @@ surveys <- read_csv(here::here("week 2", "surveys.csv"))
 -   `left_join()` Example 1
 
 ```{r}
-#| label: wd-5-left-ex-1
+#| label: Lab 4 Challenge
+
+ca_childcare <- 
+  left_join(
+    x = childcare_costs,
+    y = counties,
+    by = join_by("county_fips_code")
+  ) |>
+  filter(state_abbreviation == "CA")
+  
 
 ```
 
@@ -163,6 +201,7 @@ surveys <- read_csv(here::here("week 2", "surveys.csv"))
 
 ```{r}
 #| label: wd-5-left-right-ex-2
+
 
 ```
 

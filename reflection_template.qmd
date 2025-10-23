@@ -65,7 +65,33 @@ teacher_evals_clean <- evals |>
 -   Example selecting columns based on logical values (e.g., `starts_with()`, `ends_with()`, `contains()`, `where()`)
 
 ```{r}
-#| label: wd-2-ex-3
+#| label: wd-2-ex-3, Lab 4 Question 7
+ca_childcare |>
+  select(study_year, diff_counties, mc_infant, mc_toddler, mc_preschool) |>
+  pivot_longer(cols = starts_with("mc_"), 
+               names_to = "age_group", values_to = "price") |>
+  mutate(
+    age_group = recode(age_group,
+                       mc_infant = "Infant",
+                       mc_toddler = "Toddler",
+                       mc_preschool = "Preschool"),
+    diff_counties = fct_reorder2(diff_counties, study_year, price)
+  ) |>
+  ggplot(aes(x = study_year, y = price, color = diff_counties)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth() +
+  facet_wrap(~age_group) +
+  scale_x_continuous(breaks = seq(2008, 2018, 2)) +
+  labs(
+    title = "Weekly Median Price for Center-Based Childcare ($)",
+    x = "Study Year",
+    y = " ",
+    color = "California Region"
+  ) +
+   theme_minimal(base_size = 8) +
+  theme(aspect.ratio = 1, 
+        panel.border = element_rect(color = "black", linewidth = 0.8),
+  ) 
 
 
 ```
@@ -133,21 +159,30 @@ teacher_evals_clean |>
 -   Numeric Example 1
 
 ```{r}
-#| label: wd-4-numeric-ex-1
+#| label: wd-4-numeric-ex-1,
+
 
 ```
 
 -   Numeric Example 2
 
 ```{r}
-#| label: wd-4-numeric-ex-2
+#| label: 
+
 
 ```
 
 -   Factor Example 1 (renaming levels)
 
 ```{r}
-#| label: wd-4-factor-ex-1
+#| label: wd-4-factor-ex-1, Lab 3 Question 5
+teacher_evals_clean <- evals |>
+  rename (sex = gender) |>
+  mutate (teacher_id = as.character (teacher_id)) |>
+  filter(no_participants >= 10) |>
+  select (course_id, teacher_id, question_no, no_participants, 
+         resp_share, SET_score_avg, percent_failed_cur, 
+         academic_degree, seniority, sex) 
 
 ```
 
@@ -239,15 +274,59 @@ ca_childcare <-
 
 -   `pivot_longer()`
 
-```{r}
-#| label: wd-7-long
-
+```{r} 
+#| label: wd-7-long, Lab 4 Question 7
+ca_childcare |>
+  select(study_year, diff_counties, mc_infant, mc_toddler, mc_preschool) |>
+  pivot_longer(cols = starts_with("mc_"), 
+               names_to = "age_group", values_to = "price") |>
+  mutate(
+    age_group = recode(age_group,
+                       mc_infant = "Infant",
+                       mc_toddler = "Toddler",
+                       mc_preschool = "Preschool"),
+    diff_counties = fct_reorder2(diff_counties, study_year, price)
+  ) |>
+  ggplot(aes(x = study_year, y = price, color = diff_counties)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth() +
+  facet_wrap(~age_group) +
+  scale_x_continuous(breaks = seq(2008, 2018, 2)) +
+  labs(
+    title = "Weekly Median Price for Center-Based Childcare ($)",
+    x = "Study Year",
+    y = " ",
+    color = "California Region"
+  ) +
+   theme_minimal(base_size = 8) +
+  theme(aspect.ratio = 1, 
+        panel.border = element_rect(color = "black", linewidth = 0.8),
+  ) 
 ```
+
 
 -   `pivot_wider()`
 
 ```{r}
-#| label: wd-7-wide
+#| label: wd-7-wide, Lab 4 Question 5
+
+income_by_region <- ca_childcare |>
+  group_by(diff_counties, study_year) |>
+  summarise(
+    median_income = median(mhi_2018, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  filter(study_year %in% c(2008, 2018)) |>
+  pivot_wider(
+    names_from = study_year,
+    values_from = median_income,
+    names_prefix = "year_") |>
+   arrange(desc(year_2018)
+  )
+
+print (income_by_region)
+```
+
 
 ```
 
@@ -268,8 +347,31 @@ The following assignments satisfy the above criteria:
 -   Example of **ggplot2** plotting
 
 ```{r}
-#| label: r-2-1
+#| label: r-2-1, Challenge 3 Question 2
+ggplot(data = teacher_evals_compare, aes(x = sen_level, fill = SET_level)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent_format()) +   # show % on y-axis
+  scale_fill_manual(
+    values = c("excellent" = "#C19AE8", "standard" = "#B98B46"),
+    name = "Evaluation Rating"
+  ) +
+  labs(
+    x = "Years of Experience",
+    y = "",
+    title = "Evaluation of Teachers' Use of Activities"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "top",
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 11),
+    legend.key.size = unit(1.2, "lines"),
+    plot.title = element_text(size = 18),
+    axis.text = element_text(size = 12),
+    panel.border = element_rect(color = "black", linewidth = 0.8),
+)
 
+```
 ```
 
 -   Example of **dplyr** pipeline
@@ -339,35 +441,163 @@ The following assignments satisfy the above criteria:
 -   I can modify my plot theme to be more readable
 
 ```{r}
-#| label: dvs-2-ex-1
+#| label: dvs-2-ex-1, Challenge 2 Question 16, Revised
+#| label: rotated-boxplot
+untitled_green <- c("#1d7c3c", "#F28500")
+ggplot(data = surveys,
+       mapping = aes(x = weight,
+                     y = species, 
+                     color = sex)) + #entered space to make the code more readable
+       scale_color_manual(values = untitled_green) +
+       geom_jitter(color = "blue",
+                   alpha = 0.1) +
+       geom_boxplot( outlier.shape = NULL) +
+       labs (  x = "Weight of animal (g)",
+               y = "Species of an animal",
+               title = "Does species differ by weight?",   #entered space to make the code more readable
+               subtitle = "Separated by 
+              <span style = 'color:#1d7c3c;'>Female</span> and 
+              <span style = 'color:#F28500;'>Male</span>" ) +
+        theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    panel.border = element_rect(color = "black",
+                                fill = NA,
+                                linewidth = 0.8),
+    plot.subtitle = element_markdown(),
+    legend.position = "none" 
+
+    )
+
+```
 
 ```
 
 -   I can modify my colors to be accessible to anyone's eyes
 
 ```{r}
-#| label: dvs-2-ex-2
+#| label: dvs-2-ex-2, Challenge 2 Question 16, Revised
+#| label: rotated-boxplot
+untitled_green <- c("#1d7c3c", "#F28500")
+ggplot(data = surveys,
+       mapping = aes(x = weight,
+                     y = species, 
+                     color = sex))  #entered space to make the code more readable
+       scale_color_manual(values = untitled_green) +
+       geom_jitter(color = "blue",
+                   alpha = 0.1) +
+       geom_boxplot( outlier.shape = NULL) +
+       labs (  x = "Weight of animal (g)",
+               y = "Species of an animal",
+               title = "Does species differ by weight?",   #entered space to make the code more readable
+               subtitle = "Separated by 
+              <span style = 'color:#1d7c3c;'>Female</span> and 
+              <span style = 'color:#F28500;'>Male</span>" ) +
+        theme (
+    plot.title = element_text(size = 16, face = "bold"),
+    panel.border = element_rect(color = "black",
+                                fill = NA,
+                                linewidth = 0.8),
+    plot.subtitle = element_markdown(),
+    legend.position = "none" 
+
+    )
 
 ```
+
 
 -   I can modify my plot titles to clearly communicate the data context
 
 ```{r}
-#| label: dvs-2-ex-3
+#| label: dvs-2-ex-3 Challenge 2 Question 16, Revised
+#| label: rotated-boxplot
+untitled_green <- c("#1d7c3c", "#F28500")
+ggplot(data = surveys,
+       mapping = aes(x = weight,
+                     y = species, 
+                     color = sex)) + #entered space to make the code more readable
+       scale_color_manual(values = untitled_green) +
+       geom_jitter(color = "blue",
+                   alpha = 0.1) +
+       geom_boxplot( outlier.shape = NULL) +
+       labs (  x = "Weight of animal (g)",
+               y = "Species of an animal",
+               title = "Does species differ by weight?",   #entered space to make the code more readable
+               subtitle = "Separated by 
+              <span style = 'color:#1d7c3c;'>Female</span> and 
+              <span style = 'color:#F28500;'>Male</span>" ) +
+        theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    panel.border = element_rect(color = "black",
+                                fill = NA,
+                                linewidth = 0.8),
+    plot.subtitle = element_markdown(),
+    legend.position = "none" 
+
+    )
+
 
 ```
 
 -   I can modify the text in my plot to be more readable
 
 ```{r}
-#| label: dvs-2-ex-4
-
+#| label: dvs-2-ex-4, Lab 2, Question 8, Revised
+#| label: scatterplot 2
+untitled_pink <- c("#a83279", "#FFD700")
+ggplot(data = surveys,
+       mapping = aes(x = species,
+                     y = weight, 
+                     color = sex)) +
+       scale_color_manual(values = untitled_pink) +
+       geom_jitter(color = "blue", alpha = 0.1) +
+       geom_boxplot( outlier.shape = NULL) +
+       labs (  x = "Species of an animal",
+               y = "Weight of animal (g)",
+               title = "Does species differ by weight?",  #entered space to make the code more readable 
+               subtitle = "Separated by 
+              <span style = 'color:#a83279;'>Female</span> and 
+              <span style = 'color:#FFD700;'>Male</span>") +
+        theme(
+       axis.text.x = element_text(angle = 45),
+       plot.title = element_text(size = 16, face = "bold"),
+       panel.border = element_rect(color = "black", fill = NA, linewidth = 0.8),
+       plot.subtitle = element_markdown(),
+       legend.position = "none" 
+       )
 ```
 
 -   I can reorder my legend to align with the colors in my plot
 
 ```{r}
-#| label: dvs-2-ex-5
+#| label: dvs-2-ex-5 Challenge 2 Question 16
+#| label: rotated-boxplot
+untitled_green <- c("#1d7c3c", "#F28500")
+ggplot(data = surveys,
+       mapping = aes(x = weight,
+                     y = species, 
+                     color = sex)) + #entered space to make the code more readable
+       scale_color_manual(values = untitled_green) +
+       geom_jitter(color = "blue",
+                   alpha = 0.1) +
+       geom_boxplot( outlier.shape = NULL) +
+       labs (  x = "Weight of animal (g)",
+               y = "Species of an animal",
+               title = "Does species differ by weight?",   #entered space to make the code more readable
+               subtitle = "Separated by 
+              <span style = 'color:#1d7c3c;'>Female</span> and 
+              <span style = 'color:#F28500;'>Male</span>" ) +
+        theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    panel.border = element_rect(color = "black",
+                                fill = NA,
+                                linewidth = 0.8),
+    plot.subtitle = element_markdown(),
+    legend.position = "none" 
+
+    )
+
+
+```
 
 ```
 
@@ -406,7 +636,19 @@ The following assignments satisfy the above criteria:
 -   Example using `summarize()`
 
 ```{r}
-#| label: dvs-4-summarize
+#| label: dvs-4-summarize, Lab 3, Question 10
+teacher_evals_clean |>
+  filter(question_no == 901) |>
+  group_by(teacher_id) |>
+  summarize(
+    n_courses = n_distinct(course_id),
+    avg_q1_score = mean(SET_score_avg, na.rm = TRUE),
+    .groups = "drop"  ) |>
+  filter(n_courses >= 5) |>
+  filter(avg_q1_score == min(avg_q1_score) | 
+         avg_q1_score == max(avg_q1_score)) |>
+  arrange (desc(avg_q1_score) )
+
 
 ```
 

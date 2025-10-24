@@ -143,14 +143,39 @@ teacher_evals_clean |>
 -   Character Example 2 (example must use functions from **stringr**)
 
 ```{r}
-#| label: wd-3-string
+#| label: wd-3-string, Lab 5 
+ gym_suspects <-
+  inner_join( 
+    x = get_fit_now_check_in,
+    y = get_fit_now_member,
+    by = join_by (membership_id == id)) |> #joining two tables
+  filter(
+    membership_status == "gold",
+    str_detect(membership_id, "^48Z")) |>
+  filter (check_in_date == '20180109') 
 
+gym_suspects |>
+  pull (name)
+
+```
 ```
 
 -   Date (example must use functions from **lubridate**)
 
 ```{r}
-#| label: wd-3-date
+#| label: wd-3-date, Lab 5
+#Based on the murderer interview finding who hired him based on his hints.
+
+#Find people who attended SQL Symphony Concert 3 times in Dec 2017 
+concert_3x_dec <- facebook_event_checkin |>
+ mutate(date = ymd(date)) |>      #convert numeric dates (like 20171210) into proper Date objects            
+  filter(
+    event_name == "SQL Symphony Concert", 
+    date %within% interval(ymd("2017-12-01"), ymd("2017-12-31")) #between these dates 
+  ) |>
+  count(person_id, name = "n") |>
+  filter(n == 3) |>
+  select(person_id) 
 
 ```
 
@@ -159,7 +184,33 @@ teacher_evals_clean |>
 -   Numeric Example 1
 
 ```{r}
-#| label: wd-4-numeric-ex-1,
+#| label: wd-4-numeric-ex-1,Lab 4 Challenge Question 3
+```{r}
+childcare_data <- ca_childcare |>
+  pivot_longer(
+    cols = c(mcsa, mfccsa),
+    names_to = "care_type",
+    values_to = "full_time_median_price"
+  ) |>
+   mutate(
+    care_type = recode(care_type,
+      mcsa = "Center-Based Care ",
+      mfccsa = "Family Childcare"
+    ) 
+    )
+
+summary_table <- childcare_data |>
+  group_by(care_type) |>
+  summarise(
+     n = n(),
+    mean_price = mean(full_time_median_price),
+    min_price = min(full_time_median_price),
+    max_price = max(full_time_median_price)
+                      
+  )
+
+summary_table
+```
 
 
 ```
@@ -167,8 +218,21 @@ teacher_evals_clean |>
 -   Numeric Example 2
 
 ```{r}
-#| label: 
+#| label: Lab 3, Question 10
+#| label: question-1-high-low
+teacher_evals_clean |>
+  filter(question_no == 901) |>
+  group_by(teacher_id) |>
+  summarize(
+    n_courses = n_distinct(course_id),
+    avg_q1_score = mean(SET_score_avg, na.rm = TRUE),
+    .groups = "drop"  ) |>
+  filter(n_courses >= 5) |>
+  filter(avg_q1_score == min(avg_q1_score) | 
+         avg_q1_score == max(avg_q1_score)) |>
+  arrange (desc(avg_q1_score) )
 
+```
 
 ```
 
@@ -243,14 +307,35 @@ ca_childcare <-
 -   `inner_join()` Example 1
 
 ```{r}
-#| label: wd-5-inner-ex-1
+#| label: wd-5-inner-ex-1, Lab 5
+ gym_suspects <-
+  inner_join( 
+    x = get_fit_now_check_in,
+    y = get_fit_now_member,
+    by = join_by (membership_id == id)) |> #joining two tables
+  filter(
+    membership_status == "gold",
+    str_detect(membership_id, "^48Z")) |>
+  filter (check_in_date == '20180109') 
+
+gym_suspects |>
+  pull (name)
+
+```
 
 ```
 
 -   `inner_join()` Example 2
 
 ```{r}
-#| label: wd-5-inner-ex-2
+#| label: wd-5-inner-ex-2, Lab 5
+#Joining gym suspects and the person table so I can access person-level fields
+gym_suspects_with_license <- 
+  inner_join(
+  x = gym_suspects, #joining gym_suspects table and person
+  y = person,
+  by = join_by(person_id == id)
+)
 
 ```
 
@@ -259,8 +344,13 @@ ca_childcare <-
 -   `semi_join()`
 
 ```{r}
-#| label: wd-6-semi
-
+#| label: wd-6-semi, Lab 5
+# Keep only people who attended 3 concerts (semi join)
+suspects <- semi_join(
+  x = people_full |> rename(person_id = id),
+  y = concert_3x_dec,
+  by = "person_id"
+)
 ```
 
 -   `anti_join()`
@@ -377,14 +467,30 @@ ggplot(data = teacher_evals_compare, aes(x = sen_level, fill = SET_level)) +
 -   Example of **dplyr** pipeline
 
 ```{r}
-#| label: r-2-2
+#| label: r-2-2, Lab 3 Question 5
+teacher_evals_clean <- evals |>
+  rename (sex = gender) |>
+  mutate (teacher_id = as.character (teacher_id)) |>
+  filter(no_participants >= 10) |>
+  select (course_id, teacher_id, question_no, no_participants, 
+         resp_share, SET_score_avg, percent_failed_cur, 
+         academic_degree, seniority, sex) 
+
+```
 
 ```
 
 -   Example of function formatting
 
 ```{r}
-#| label: r-2-3
+#| label: r-2-3, Lab 3 Question 5
+teacher_evals_clean <- evals |>
+  rename (sex = gender) |>
+  mutate (teacher_id = as.character (teacher_id)) |>
+  filter(no_participants >= 10) |>
+  select (course_id, teacher_id, question_no, no_participants, 
+         resp_share, SET_score_avg, percent_failed_cur, 
+         academic_degree, seniority, sex) 
 
 ```
 
@@ -393,7 +499,24 @@ ggplot(data = teacher_evals_compare, aes(x = sen_level, fill = SET_level)) +
 -   Example (any context)
 
 ```{r}
-#| label: r-3-example
+#| label: r-3-example, Lab 4 Question 5
+
+income_by_region <- ca_childcare |>
+  group_by(diff_counties, study_year) |>
+  summarise(
+    median_income = median(mhi_2018, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  filter(study_year %in% c(2008, 2018)) |>
+  pivot_wider(
+    names_from = study_year,
+    values_from = median_income,
+    names_prefix = "year_") |>
+   arrange(desc(year_2018)
+  )
+
+print (income_by_region)
+```
 
 ```
 
@@ -411,28 +534,108 @@ ggplot(data = teacher_evals_compare, aes(x = sen_level, fill = SET_level)) +
 -   At least two numeric variables
 
 ```{r}
-#| label: dvs-1-num
+#| label: dvs-1-num, Challenge 4 Question 4
+childcare_data <- childcare_data |>
+  mutate(
+    care_type = recode(
+      care_type,
+      "mcsa" = "Center-Based Care",
+      "mfccsa" = "Family Childcare")
+    )
+ggplot(childcare_data, aes(x = study_year, 
+                           y = full_time_median_price, 
+                           color = care_type)) +
+  geom_point (alpha = 0.7, position = position_jitter(width = 0.2)) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Full-Time Median Childcare Prices in California by Year and Care Type",
+    subtitle = "Comparing Center-Based vs Family (In-Home) Care",
+    x = "Study Year",
+    y = "Full-Time Median Price (2018 dollars)",
+    color = "Care Type"
+  ) 
 
 ```
 
 -   At least one numeric variable and one categorical variable
 
 ```{r}
-#| label: dvs-2-num-cat
+#| label: dvs-2-num-cat, Lab 2 Question 4
+untitled_purple <- c("#5e3c99", "#7B68EE", "#a678d6")
+ggplot(data = surveys,
+       mapping = aes(x = weight, y = hindfoot_length, color = sex)) +
+       geom_point(alpha = 0.3) +
+       scale_color_manual(values = untitled_purple) +
+       facet_wrap(~species) +
+       labs (  x = "Weight of animal (g)",
+               y = "",
+               title = "Does the weight of the animal affects the hindfoot length?",
+               subtitle = "Hindfoot Length (mm), Separated by 
+              <span style = 'color:#7B68EE;'>Female</span> and 
+              <span style = 'color:#a678d6;'>Male</span>" )+
+        theme(
+        plot.title = element_text(size = 16, face = "bold"),
+        plot.subtitle = element_markdown(),
+        panel.border = element_rect(color = "black", linewidth = 0.8))
+
+
 
 ```
 
 -   At least two categorical variables
 
 ```{r}
-#| label: dvs-2-cat
+#| label: dvs-2-cat Challenge 4 Question 3
+childcare_data <- ca_childcare |>
+  pivot_longer(
+    cols = c(mcsa, mfccsa),
+    names_to = "care_type",
+    values_to = "full_time_median_price"
+  ) |>
+   mutate(
+    care_type = recode(care_type,
+      mcsa = "Center-Based Care ",
+      mfccsa = "Family Childcare"
+    ) 
+    )
+
+summary_table <- childcare_data |>
+  group_by(care_type) |>
+  summarise(
+     n = n(),
+    mean_price = mean(full_time_median_price),
+    min_price = min(full_time_median_price),
+    max_price = max(full_time_median_price)
+                      
+  )
+
+summary_table
 
 ```
 
 -   Dates (time series plot)
 
 ```{r}
-#| label: dvs-2-date
+#| label: dvs-2-date Challenge 4, Question 4
+childcare_data <- childcare_data |>
+  mutate(
+    care_type = recode(
+      care_type,
+      "mcsa" = "Center-Based Care",
+      "mfccsa" = "Family Childcare")
+    )
+ggplot(childcare_data, aes(x = study_year, 
+                           y = full_time_median_price, 
+                           color = care_type)) +
+  geom_point (alpha = 0.7, position = position_jitter(width = 0.2)) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Full-Time Median Childcare Prices in California by Year and Care Type",
+    subtitle = "Comparing Center-Based vs Family (In-Home) Care",
+    x = "Study Year",
+    y = "Full-Time Median Price (2018 dollars)",
+    color = "Care Type"
+  ) 
 
 ```
 
@@ -498,9 +701,7 @@ ggplot(data = surveys,
                                 fill = NA,
                                 linewidth = 0.8),
     plot.subtitle = element_markdown(),
-    legend.position = "none" 
-
-    )
+    legend.position = "none" )
 
 ```
 
@@ -606,7 +807,32 @@ ggplot(data = surveys,
 -   I can use non-standard colors (Example 1)
 
 ```{r}
-#| label: dvs-3-1-ex-1
+#| label: dvs-3-1-ex-1 Challenge 2 Question 16
+#| label: rotated-boxplot
+untitled_green <- c("#1d7c3c", "#F28500")
+ggplot(data = surveys,
+       mapping = aes(x = weight,
+                     y = species, 
+                     color = sex)) + #entered space to make the code more readable
+       scale_color_manual(values = untitled_green) +
+       geom_jitter(color = "blue",
+                   alpha = 0.1) +
+       geom_boxplot( outlier.shape = NULL) +
+       labs (  x = "Weight of animal (g)",
+               y = "Species of an animal",
+               title = "Does species differ by weight?",   #entered space to make the code more readable
+               subtitle = "Separated by 
+              <span style = 'color:#1d7c3c;'>Female</span> and 
+              <span style = 'color:#F28500;'>Male</span>" ) +
+        theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    panel.border = element_rect(color = "black",
+                                fill = NA,
+                                linewidth = 0.8),
+    plot.subtitle = element_markdown(),
+    legend.position = "none" 
+
+    )
 
 ```
 
@@ -614,6 +840,32 @@ ggplot(data = surveys,
 
 ```{r}
 #| label: dvs-3-1-ex-2
+Challenge 2 Question 16
+#| label: rotated-boxplot
+untitled_green <- c("#1d7c3c", "#F28500")
+ggplot(data = surveys,
+       mapping = aes(x = weight,
+                     y = species, 
+                     color = sex)) + #entered space to make the code more readable
+       scale_color_manual(values = untitled_green) +
+       geom_jitter(color = "blue",
+                   alpha = 0.1) +
+       geom_boxplot( outlier.shape = NULL) +
+       labs (  x = "Weight of animal (g)",
+               y = "Species of an animal",
+               title = "Does species differ by weight?",   #entered space to make the code more readable
+               subtitle = "Separated by 
+              <span style = 'color:#1d7c3c;'>Female</span> and 
+              <span style = 'color:#F28500;'>Male</span>" ) +
+        theme(
+    plot.title = element_text(size = 16, face = "bold"),
+    panel.border = element_rect(color = "black",
+                                fill = NA,
+                                linewidth = 0.8),
+    plot.subtitle = element_markdown(),
+    legend.position = "none" 
+
+    )
 
 ```
 
@@ -664,7 +916,21 @@ teacher_evals_clean |>
 -   Example 1
 
 ```{r}
-#| label: dvs-5-1
+#| label: dvs-5-1, Lab 4 Question 6
+lowest_med_income_ <- ca_childcare |>
+  filter(study_year == 2018) |>
+  group_by(diff_counties) |>
+  summarise(median_price = median(mc_infant, na.rm = TRUE)) |>
+  slice_min(median_price, n = 1)
+
+lowest_med_income_2 <- ca_childcare |>
+filter(study_year == 2018) |>
+  group_by(diff_counties) |>
+  summarise(median_income = median(mhi_2018, na.rm = TRUE)) |>
+  slice_min(median_income, n = 1)
+
+lowest_med_income_
+lowest_med_income_2
 
 ```
 
@@ -680,7 +946,23 @@ teacher_evals_clean |>
 -   I can modify my column names to clearly communicate the data context
 
 ```{r}
-#| label: dvs-6-ex-1
+#| label: dvs-6-ex-1 Lab 4 Question 5, Revised
+
+income_by_region <- ca_childcare |>
+  group_by(diff_counties, study_year) |>
+  summarise(
+    median_income = median(mhi_2018, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  filter(study_year %in% c(2008, 2018)) |>
+  pivot_wider(
+    names_from = study_year,
+    values_from = median_income,
+    names_prefix = "Income_") |> #Revised to communicate data context better from Year to Income
+   arrange(desc(year_2018)
+  )
+
+print (income_by_region)
 
 ```
 
@@ -694,7 +976,18 @@ teacher_evals_clean |>
 -   I can arrange my table to have an intuitive ordering
 
 ```{r}
-#| label: dvs-6-ex-3
+#| label: dvs-6-ex-3 Lab 3 Question 10
+teacher_evals_clean |>
+  filter(question_no == 901) |>
+  group_by(teacher_id) |>
+  summarize(
+    n_courses = n_distinct(course_id),
+    avg_q1_score = mean(SET_score_avg, na.rm = TRUE),
+    .groups = "drop"  ) |>
+  filter(n_courses >= 5) |>
+  filter(avg_q1_score == min(avg_q1_score) | 
+         avg_q1_score == max(avg_q1_score)) |>
+  arrange (desc(avg_q1_score) )
 
 ```
 
@@ -705,12 +998,29 @@ teacher_evals_clean |>
 ```{r}
 #| label: dvs-7-ex-1
 
+
 ```
 
 -   I can modify the layout of my table to be more readable (e.g., `pivot_longer()` or `pivot_wider()`)
 
 ```{r}
-#| label: dvs-7-ex-2
+#| label: dvs-7-ex-2 Lab 4 Question 5
+
+income_by_region <- ca_childcare |>
+  group_by(diff_counties, study_year) |>
+  summarise(
+    median_income = median(mhi_2018, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  filter(study_year %in% c(2008, 2018)) |>
+  pivot_wider(
+    names_from = study_year,
+    values_from = median_income,
+    names_prefix = "year_") |>
+   arrange(desc(year_2018)
+  )
+
+print (income_by_region)
 
 ```
 
@@ -721,8 +1031,18 @@ teacher_evals_clean |>
 -   using a single function call with multiple inputs (rather than multiple function calls)
 
 ```{r}
-#| label: pe-1-one-call
+#| label: pe-1-one-call, Lab 5
+person |>
+  filter(address_street_name == "Northwestern Dr") |>
+  slice_max(address_number, n = 1) |>
+  pull (id)
+#found one of the witness
 
+
+person |>
+  filter(str_detect(name, "Annabel"), address_street_name == "Franklin Ave") |>
+  pull (id)
+  #found second of the witness
 ```
 
 -   using `across()`

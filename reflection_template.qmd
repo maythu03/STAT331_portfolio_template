@@ -66,32 +66,57 @@ teacher_evals_clean <- evals |>
 
 ```{r}
 #| label: wd-2-ex-3, Lab 4 Question 7
+n_regions <- n_distinct(ca_childcare$diff_counties)
+region_palette <- colorRampPalette(RColorBrewer::brewer.pal(12, "Paired"))(max(n_regions, 3))
+
 ca_childcare |>
-  select(study_year, diff_counties, mc_infant, mc_toddler, mc_preschool) |>
-  pivot_longer(cols = starts_with("mc_"), 
-               names_to = "age_group", values_to = "price") |>
-  mutate(
-    age_group = recode(age_group,
-                       mc_infant = "Infant",
-                       mc_toddler = "Toddler",
-                       mc_preschool = "Preschool"),
-    diff_counties = fct_reorder2(diff_counties, study_year, price)
+  select(
+    study_year,
+    diff_counties,
+    mc_infant, mc_toddler, mc_preschool
   ) |>
-  ggplot(aes(x = study_year, y = price, color = diff_counties)) +
+  pivot_longer(
+    cols      = starts_with("mc_"),
+    names_to  = "age_group",
+    values_to = "price"
+  ) |>
+  mutate(
+    age_group = case_match (
+      age_group,
+      "mc_infant"    ~ "Infant",
+      "mc_toddler"   ~ "Toddler",
+      "mc_preschool" ~ "Preschool"
+    ),
+    age_group = factor(age_group, levels = c("Infant","Toddler","Preschool"))
+  ) |>
+  group_by(diff_counties) |>
+  mutate(order_val = median(price, na.rm = TRUE)) |>
+  ungroup() |>
+  mutate(
+    diff_counties = fct_reorder(diff_counties, order_val, .na_rm = TRUE)
+  ) |>
+  ggplot(
+    mapping = aes(x = study_year, y = price, color = diff_counties)
+  ) +
   geom_point(alpha = 0.6) +
   geom_smooth() +
-  facet_wrap(~age_group) +
-  scale_x_continuous(breaks = seq(2008, 2018, 2)) +
-  labs(
+  facet_wrap(~ age_group, nrow = 1) +
+  scale_x_continuous(breaks = c(2008, 2010, 2012, 2014, 2016, 2018)) +
+  scale_color_manual(name = "California Region", values = region_palette) +
+ labs(
     title = "Weekly Median Price for Center-Based Childcare ($)",
     x = "Study Year",
-    y = " ",
-    color = "California Region"
+    y = ""
   ) +
-   theme_minimal(base_size = 8) +
-  theme(aspect.ratio = 1, 
-        panel.border = element_rect(color = "black", linewidth = 0.8),
-  ) 
+ theme_minimal(base_size = 8) +
+  theme(
+    aspect.ratio = 1,
+    panel.border = element_rect(color = "black", linewidth = 0.8)
+  )
+
+ 
+
+
 
 
 ```
@@ -184,7 +209,7 @@ concert_3x_dec <- facebook_event_checkin |>
 -   Numeric Example 1
 
 ```{r}
-#| label: wd-4-numeric-ex-1,Lab 4 Challenge Question 3
+#| label: wd-4-numeric-ex-1, Challenge 4 e Question 3
 ```{r}
 childcare_data <- ca_childcare |>
   pivot_longer(
@@ -276,7 +301,7 @@ teacher_evals_clean <- evals |>
 -   `left_join()` Example 1
 
 ```{r}
-#| label: Lab 4 Challenge
+#| label: Lab 4 Question 2
 
 ca_childcare <- 
   left_join(
@@ -292,14 +317,38 @@ ca_childcare <-
 -   `right_join()` Example 1
 
 ```{r}
-#| label: wd-5-right
-
+#| label: wd-5-right Lab 4 Question 2 Revised
+#| Made a left join into right join
+ca_childcare <- 
+  right_join(
+    x = counties,
+    y = childcare_costs,
+    by = join_by("county_fips_code")
+  ) |>
+  filter(state_abbreviation == "CA")
 ```
 
 -   `left_join()` **or** `right_join()` Example 2
 
 ```{r}
-#| label: wd-5-left-right-ex-2
+#| label: wd-5-left-right-ex-2 Lab 4 Question 3
+ca_childcare <- ca_childcare |>
+  left_join(
+    tax_rev |>
+      mutate(
+        county_name = entity_name,
+        study_year  = year
+      ) |>
+      semi_join(
+        ca_childcare |>
+          select(county_name, study_year) |>
+          distinct(),
+        by = c("county_name", "study_year")
+      ) |>
+      arrange(county_name, study_year) |>
+      distinct(county_name, study_year, .keep_all = TRUE),
+    by = c("county_name", "study_year")
+   ) #got inpiration from peer review 
 
 
 ```
@@ -426,10 +475,10 @@ print (income_by_region)
 
 The following assignments satisfy the above criteria:
 
--   Example 1
--   Example 2
--   Example 3
--   Example 4
+-   Lab 2
+-   Lab 3
+-   Lab 2 Challenge
+-   Lab 3 Challenge
 -   Example 5
 
 **R-2: I can write well documented and tidy code.**
@@ -501,6 +550,8 @@ teacher_evals_clean <- evals |>
 ```{r}
 #| label: r-3-example, Lab 4 Question 5
 
+#| label: median-income-by-region-over-time
+
 income_by_region <- ca_childcare |>
   group_by(diff_counties, study_year) |>
   summarise(
@@ -511,8 +562,8 @@ income_by_region <- ca_childcare |>
   pivot_wider(
     names_from = study_year,
     values_from = median_income,
-    names_prefix = "year_") |>
-   arrange(desc(year_2018)
+    names_prefix = "Median_Income_") |>
+   arrange(desc(Median_Income_2018)
   )
 
 print (income_by_region)
@@ -917,20 +968,22 @@ teacher_evals_clean |>
 
 ```{r}
 #| label: dvs-5-1, Lab 4 Question 6
-lowest_med_income_ <- ca_childcare |>
+lowest_income_2018 <- income_by_region |>
+  slice_min(Median_Income_2018, n = 1) |>
+  select(region = diff_counties, Median_Income_2018)
+
+infant_price_2018 <- ca_childcare |>
   filter(study_year == 2018) |>
   group_by(diff_counties) |>
-  summarise(median_price = median(mc_infant, na.rm = TRUE)) |>
-  slice_min(median_price, n = 1)
+  summarise(median_weekly_price = median(mc_infant, na.rm = TRUE), .groups = "drop") |>
+  rename(region = diff_counties)
 
-lowest_med_income_2 <- ca_childcare |>
-filter(study_year == 2018) |>
-  group_by(diff_counties) |>
-  summarise(median_income = median(mhi_2018, na.rm = TRUE)) |>
-  slice_min(median_income, n = 1)
+lowest_price_2018 <- infant_price_2018 |>
+  slice_min(median_weekly_price, n = 1)
 
-lowest_med_income_
-lowest_med_income_2
+lowest_price_2018
+lowest_income_2018
+
 
 ```
 
@@ -948,6 +1001,8 @@ lowest_med_income_2
 ```{r}
 #| label: dvs-6-ex-1 Lab 4 Question 5, Revised
 
+#| label: median-income-by-region-over-time
+
 income_by_region <- ca_childcare |>
   group_by(diff_counties, study_year) |>
   summarise(
@@ -958,8 +1013,8 @@ income_by_region <- ca_childcare |>
   pivot_wider(
     names_from = study_year,
     values_from = median_income,
-    names_prefix = "Income_") |> #Revised to communicate data context better from Year to Income
-   arrange(desc(year_2018)
+    names_prefix = "Median_Income_") |>
+   arrange(desc(Median_Income_2018)
   )
 
 print (income_by_region)
@@ -1110,14 +1165,112 @@ person |>
 -   I can use functions which are not superseded or deprecated
 
 ```{r}
-#| label: pe-4-1
+#| label: pe-4-1,  Lab 4 Question 7
+n_regions <- n_distinct(ca_childcare$diff_counties)
+region_palette <- colorRampPalette(RColorBrewer::brewer.pal(12, "Paired"))(max(n_regions, 3))
+
+ca_childcare |>
+  select(
+    study_year,
+    diff_counties,
+    mc_infant, mc_toddler, mc_preschool
+  ) |>
+  pivot_longer(
+    cols      = starts_with("mc_"),
+    names_to  = "age_group",
+    values_to = "price"
+  ) |>
+  mutate(
+    age_group = case_match (
+      age_group,
+      "mc_infant"    ~ "Infant",
+      "mc_toddler"   ~ "Toddler",
+      "mc_preschool" ~ "Preschool"
+    ),
+    age_group = factor(age_group, levels = c("Infant","Toddler","Preschool"))
+  ) |>
+  group_by(diff_counties) |>
+  mutate(order_val = median(price, na.rm = TRUE)) |>
+  ungroup() |>
+  mutate(
+    diff_counties = fct_reorder(diff_counties, order_val, .na_rm = TRUE)
+  ) |>
+  ggplot(
+    mapping = aes(x = study_year, y = price, color = diff_counties)
+  ) +
+  geom_point(alpha = 0.6) +
+  geom_smooth() +
+  facet_wrap(~ age_group, nrow = 1) +
+  scale_x_continuous(breaks = c(2008, 2010, 2012, 2014, 2016, 2018)) +
+  scale_color_manual(name = "California Region", values = region_palette) +
+ labs(
+    title = "Weekly Median Price for Center-Based Childcare ($)",
+    x = "Study Year",
+    y = ""
+  ) +
+ theme_minimal(base_size = 8) +
+  theme(
+    aspect.ratio = 1,
+    panel.border = element_rect(color = "black", linewidth = 0.8)
+  )
+
+ 
 
 ```
 
 -   I can connect a data wrangling pipeline into a `ggplot()`
 
 ```{r}
-#| label: pe-4-2
+#| label: pe-4-2, Lab 4 Question 7
+n_regions <- n_distinct(ca_childcare$diff_counties)
+region_palette <- colorRampPalette(RColorBrewer::brewer.pal(12, "Paired"))(max(n_regions, 3))
+
+ca_childcare |>
+  select(
+    study_year,
+    diff_counties,
+    mc_infant, mc_toddler, mc_preschool
+  ) |>
+  pivot_longer(
+    cols      = starts_with("mc_"),
+    names_to  = "age_group",
+    values_to = "price"
+  ) |>
+  mutate(
+    age_group = case_match (
+      age_group,
+      "mc_infant"    ~ "Infant",
+      "mc_toddler"   ~ "Toddler",
+      "mc_preschool" ~ "Preschool"
+    ),
+    age_group = factor(age_group, levels = c("Infant","Toddler","Preschool"))
+  ) |>
+  group_by(diff_counties) |>
+  mutate(order_val = median(price, na.rm = TRUE)) |>
+  ungroup() |>
+  mutate(
+    diff_counties = fct_reorder(diff_counties, order_val, .na_rm = TRUE)
+  ) |>
+  ggplot(
+    mapping = aes(x = study_year, y = price, color = diff_counties)
+  ) +
+  geom_point(alpha = 0.6) +
+  geom_smooth() +
+  facet_wrap(~ age_group, nrow = 1) +
+  scale_x_continuous(breaks = c(2008, 2010, 2012, 2014, 2016, 2018)) +
+  scale_color_manual(name = "California Region", values = region_palette) +
+ labs(
+    title = "Weekly Median Price for Center-Based Childcare ($)",
+    x = "Study Year",
+    y = ""
+  ) +
+ theme_minimal(base_size = 8) +
+  theme(
+    aspect.ratio = 1,
+    panel.border = element_rect(color = "black", linewidth = 0.8)
+  )
+
+ 
 
 ```
 
@@ -1144,25 +1297,38 @@ person |>
 -   Example 1
 
 ```{r}
-#| label: dsm-2-1
+#| label: dsm-2-1 Challenge 3 Question 3
+chisq.test(
+  table(teacher_evals_compare$SET_level, teacher_evals_compare$sen_level)
+)
 
 ```
 
 -   Example 2
 
 ```{r}
-#| label: dsm-2-2
+#| label: dsm-2-2 Lab 2 Question 17
+#| label: anova
+summary(aov(weight ~ species, data = surveys))
 
 ```
 
 -   Example 3
 
 ```{r}
-#| label: dsm-2-3
+#| label: dsm-2-3 Lab 1 Question 5
+t.test(len ~ supp, 
+       data = ToothGrowth,
+       var.equal = FALSE,  
+       alternative = "two.sided",
+       conf.level = 0.95)
 
 ```
 
 ## Revising My Thinking
+
+Earlier in the course, when there was conclusion I just wrote what the table and rows represented. However, through your feedback I expanded my thinking of things like how were the data collected, who collected them, when they were collected, and why there were collected. Initially, I treated code as something personal — as long as it worked for me, I didn’t worry about how others would reproduce it. After your feedback emphasizing reproducibility, I began documenting function headers and table of contents. In Lab 3 I also implemented this idea by changing the table headers to something more informative. Rather than showing "Year 2019" I changed it into "Median Income 2019" which tells the viewers more. I also learned the importance of professonial looking document by adding the "warning:false" and "message:false" Quarto format. I learned to avoid displaying messages related to data import or package loading, as they do not add value for the reader and can make your document appear cluttered. Lastly, before this course, I viewed visualization mainly as an aesthetic step where I make graphs look “nice.” Throughout the course I learned bolding title or adding a border to the plot makes the plot stand out more. 
+
 
 <!-- How did you revise your thinking throughout the course? How did you revise your thinking on the code examples you have provided in your portfolio? -->
 
@@ -1172,8 +1338,16 @@ person |>
 
 <!-- How did you extended your thinking throughout the course? How did you extend your thinking on the code examples you have provided in your portfolio? -->
 
+Beyond the course,I extened my thinking through exploring different color palletes. In lab 4 I explored the RColorBrewer package with the Paried palletes. Additionally in Challenge Lab 2 I explored different colors that is beyond just simple colors like "red." An example I extended my thinking was in Lab 4 instead of selecting columns names I simplified it to columns that starts with "mc" because all of the columns I wanted all started with "mc". Throughout the course, I extended my thinking by learning to approach code to answer the question, but as a way to reason through data quality, and communication. In my early work, I focused mostly on producing results that “looked right,” but through feedback and practice, I began thinking more critically about how my code ensured accuracy and clarity. For example, in Lab 5 I had a hard time joining four different tables (facebook event check in, person, driver lincese, income tables). I realized each join defines a logical link between data tables and that the join order determines which observations are retained. For example, in the final version of my code, I first used inner_join() to connect person with drivers_license, then joined that result to income using a shared ssn, and finally used a semi_join() to keep only those people who attended three concerts in December. This process helped me see joins not just as technical operations, but as tools for refining a dataset to match the exact scope of data I want. For data plots I have extneded by thinking I learned that thoughtful design choices  like percentage formatting and consistent labeling  help ensure that visual outputs support the analytical information I want to tell the viewers.
+
 ## Peer Support & Collaboration
 
 <!-- Include an image or a description of feedback you gave that you are proud of (either in a peer review or in Discord). -->
+Peer Review I gave:
+"Hello Lucy,
+
+I really like how concise your code was. The code produces the results needed effectively. In addition, the format of the code was clear to read. One thing I notice is that in some of the table headers the labels could be more defined. For example in question 6, the header of "n_distinct(teacher_id)" could be changed into "unqiue instructers" to better inform what the table was telling.  Also, for the package I noticed you added the "library (knitr)." I don't think it is necessary. Other than that, everything else look great!"
 
 <!-- Include a description of how you grew as a collaborator through the weekly pair programming activities.   -->
+
+When I first started the weekly pair programming activites I was hesistant to take risks and make mistakes. After I made a mistake I brushed it over and dind't really learn or ask my partner for more elaboration. When something my partner did was something I didn't know I just brushed it over. This mindset made me cautious and prevented me from learning more. However over a several times, I learned to communicate more and be more comfortable. I became more comfortable asking questions, challenging assumptions, and discussing multiple possible solutions before deciding on one. These skills helped us write cleaner, more efficient code and also strengthened my confidence in speaking up. In addition, I also discovered the importance of active listening and empathy. Every partner had a different set of skills and way of doing code and thinking. This furthur helped me learn about different ways of how to code the same type of questions. Beyond technical skills, these pair programming sessions taught me about trust and communication.

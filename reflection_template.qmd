@@ -10,7 +10,7 @@ execute:
   echo: true
 ---
 
-[**My Grade:**]{.underline} I believe my grade equivalent to course work evidenced below to be an \_\_.
+[**My Grade:**]{.underline} I believe my grade equivalent to course work evidenced below to be an A-.
 
 [**Learning Objective Evidence:**]{.underline} In the code chunks below, provide code from Lab or Challenge assignments where you believe you have demonstrated proficiency with the specified learning target. Be sure to specify **where** the code came from (e.g., Lab 4 Question 2).
 
@@ -21,14 +21,14 @@ execute:
 -   `csv` Example 1
 
 ```{r}
-#| label: Lab 2, Question 1
+#Lab 2, Question 1
 surveys <- read_csv(here::here("week 2", "surveys.csv"))
 ```
 
 -   `csv` Example 2
 
 ```{r}
-#| label: Lab 3, Question 2
+#Lab 3, Question 2
 evals <- read_csv(here::here("week 3", "teacher_evals.csv"))
 ```
 
@@ -44,7 +44,9 @@ evals <- read_csv(here::here("week 3", "teacher_evals.csv"))
 -   Example selecting specified columns
 
 ```{r}
-#| label: Lab 3, Question 5
+
+#Lab 3 Question 5
+#| echo: false
 teacher_evals_clean <- evals |>
   rename (sex = gender) |>
   mutate (teacher_id = as.character (teacher_id)) |>
@@ -65,7 +67,8 @@ teacher_evals_clean <- evals |>
 -   Example selecting columns based on logical values (e.g., `starts_with()`, `ends_with()`, `contains()`, `where()`)
 
 ```{r}
-#| label: wd-2-ex-3, Lab 4 Question 7
+#| label: wd-2-ex-3, 
+#Lab 4 Question 7
 n_regions <- n_distinct(ca_childcare$diff_counties)
 region_palette <- colorRampPalette(RColorBrewer::brewer.pal(12, "Paired"))(max(n_regions, 3))
 
@@ -114,8 +117,6 @@ ca_childcare |>
     panel.border = element_rect(color = "black", linewidth = 0.8)
   )
 
- 
-
 
 
 
@@ -126,7 +127,7 @@ ca_childcare |>
 -   Numeric Example 1
 
 ```{r}
-#| label: Lab 3, Question 4
+# Lab 3, Question 4
 evals |>
   count(course_id, teacher_id, question_no) |>
   filter(n == 1)
@@ -136,7 +137,7 @@ evals |>
 -   Numeric Example 2
 
 ```{r}
-#| label: Lab 3, Question 5
+# Lab 3, Question 5
 teacher_evals_clean <- evals |>
   rename (sex = gender) |>
   mutate (teacher_id = as.character (teacher_id)) |>
@@ -151,7 +152,7 @@ teacher_evals_clean <- evals |>
 -   Character Example 1 (any context)
 
 ```{r}
-#| label: Lab 3, Question 12
+# Lab 3, Question 12
 teacher_evals_clean |>
   filter (academic_degree %in% 
             c ("dr", "prof")) |>
@@ -168,7 +169,8 @@ teacher_evals_clean |>
 -   Character Example 2 (example must use functions from **stringr**)
 
 ```{r}
-#| label: wd-3-string, Lab 5 
+#| label: wd-3-string, 
+# Lab 5 
  gym_suspects <-
   inner_join( 
     x = get_fit_now_check_in,
@@ -188,10 +190,7 @@ gym_suspects |>
 -   Date (example must use functions from **lubridate**)
 
 ```{r}
-#| label: wd-3-date, Lab 5
-#Based on the murderer interview finding who hired him based on his hints.
-
-#Find people who attended SQL Symphony Concert 3 times in Dec 2017 
+# Lab 5
 concert_3x_dec <- facebook_event_checkin |>
  mutate(date = ymd(date)) |>      #convert numeric dates (like 20171210) into proper Date objects            
   filter(
@@ -209,7 +208,8 @@ concert_3x_dec <- facebook_event_checkin |>
 -   Numeric Example 1
 
 ```{r}
-#| label: wd-4-numeric-ex-1, Challenge 4 e Question 3
+#| label: wd-4-numeric-ex-1
+# Challenge 4  Question 3
 ```{r}
 childcare_data <- ca_childcare |>
   pivot_longer(
@@ -238,14 +238,12 @@ summary_table
 ```
 
 
-```
 
 -   Numeric Example 2
 
 ```{r}
-#| label: Lab 3, Question 10
-#| label: question-1-high-low
-teacher_evals_clean |>
+# Lab 3, Question 10
+teacher_evals_clean |> #question-1-high-low
   filter(question_no == 901) |>
   group_by(teacher_id) |>
   summarize(
@@ -259,12 +257,13 @@ teacher_evals_clean |>
 
 ```
 
-```
+
 
 -   Factor Example 1 (renaming levels)
 
 ```{r}
-#| label: wd-4-factor-ex-1, Lab 3 Question 5
+#| label: wd-4-factor-ex-1, 
+# Lab 3 Question 5
 teacher_evals_clean <- evals |>
   rename (sex = gender) |>
   mutate (teacher_id = as.character (teacher_id)) |>
@@ -279,6 +278,56 @@ teacher_evals_clean <- evals |>
 
 ```{r}
 #| label: wd-4-factor-ex-2
+# Lab 4 Question 7
+# Revised: superseded recod () is superseded so I changed it to case_when()
+n_regions <- n_distinct(ca_childcare$diff_counties)
+region_palette <- colorRampPalette(RColorBrewer::brewer.pal(12, "Paired"))(max(n_regions, 3))
+
+ca_childcare |>
+  select(
+    study_year,
+    diff_counties,
+    mc_infant, mc_toddler, mc_preschool
+  ) |>
+  pivot_longer(
+    cols      = starts_with("mc_"),
+    names_to  = "age_group",
+    values_to = "price"
+  ) |>
+  mutate(
+    age_group = case_match (
+      age_group,
+      "mc_infant"    ~ "Infant",
+      "mc_toddler"   ~ "Toddler",
+      "mc_preschool" ~ "Preschool"
+    ),
+    age_group = factor(age_group, levels = c("Infant","Toddler","Preschool"))
+  ) |>
+  group_by(diff_counties) |>
+  mutate(order_val = median(price, na.rm = TRUE)) |>
+  ungroup() |>
+  mutate(
+    diff_counties = fct_reorder(diff_counties, order_val, .na_rm = TRUE)
+  ) |>
+  ggplot(
+    mapping = aes(x = study_year, y = price, color = diff_counties)
+  ) +
+  geom_point(alpha = 0.6) +
+  geom_smooth() +
+  facet_wrap(~ age_group, nrow = 1) +
+  scale_x_continuous(breaks = c(2008, 2010, 2012, 2014, 2016, 2018)) +
+  scale_color_manual(name = "California Region", values = region_palette) +
+ labs(
+    title = "Weekly Median Price for Center-Based Childcare ($)",
+    x = "Study Year",
+    y = ""
+  ) +
+ theme_minimal(base_size = 8) +
+  theme(
+    aspect.ratio = 1,
+    panel.border = element_rect(color = "black", linewidth = 0.8)
+  )
+
 
 ```
 
@@ -286,6 +335,19 @@ teacher_evals_clean <- evals |>
 
 ```{r}
 #| label: wd-4-string
+# Lab 5
+ gym_suspects <-
+  inner_join( 
+    x = get_fit_now_check_in,
+    y = get_fit_now_member,
+    by = join_by (membership_id == id)) |> #joining two tables
+  filter(
+    membership_status == "gold",
+    str_detect(membership_id, "^48Z")) |>
+  filter (check_in_date == '20180109') 
+
+gym_suspects |>
+  pull (name)
 
 ```
 
@@ -293,6 +355,16 @@ teacher_evals_clean <- evals |>
 
 ```{r}
 #| label: wd-4-date
+# Lab 5
+concert_3x_dec <- facebook_event_checkin |>
+ mutate(date = ymd(date)) |>      #convert numeric dates (like 20171210) into proper Date objects            
+  filter(
+    event_name == "SQL Symphony Concert", 
+    date %within% interval(ymd("2017-12-01"), ymd("2017-12-31")) #between these dates 
+  ) |>
+  count(person_id, name = "n") |>
+  filter(n == 3) |>
+  select(person_id) 
 
 ```
 
@@ -301,9 +373,9 @@ teacher_evals_clean <- evals |>
 -   `left_join()` Example 1
 
 ```{r}
-#| label: Lab 4 Question 2
+# Lab 4 Question 2
 
-ca_childcare <- 
+ca_childcare <- childcare_costs |>
   left_join(
     x = childcare_costs,
     y = counties,
@@ -317,10 +389,11 @@ ca_childcare <-
 -   `right_join()` Example 1
 
 ```{r}
-#| label: wd-5-right Lab 4 Question 2 Revised
-#| Made a left join into right join
-ca_childcare <- 
-  right_join(
+#| label: wd-5-right
+# Lab 4 Question 2 Revised
+# Made a left join into right join
+ca_childcare <- childcare_costs |>
+  right_join (
     x = counties,
     y = childcare_costs,
     by = join_by("county_fips_code")
@@ -331,7 +404,8 @@ ca_childcare <-
 -   `left_join()` **or** `right_join()` Example 2
 
 ```{r}
-#| label: wd-5-left-right-ex-2 Lab 4 Question 3
+#| label: wd-5-left-right-ex-2 
+# Lab 4 Question 3
 ca_childcare <- ca_childcare |>
   left_join(
     tax_rev |>
@@ -356,7 +430,8 @@ ca_childcare <- ca_childcare |>
 -   `inner_join()` Example 1
 
 ```{r}
-#| label: wd-5-inner-ex-1, Lab 5
+#| label: wd-5-inner-ex-1
+# Lab 5
  gym_suspects <-
   inner_join( 
     x = get_fit_now_check_in,
@@ -372,13 +447,14 @@ gym_suspects |>
 
 ```
 
-```
+
 
 -   `inner_join()` Example 2
 
 ```{r}
-#| label: wd-5-inner-ex-2, Lab 5
-#Joining gym suspects and the person table so I can access person-level fields
+#| label: wd-5-inner-ex-2
+# Lab 5
+
 gym_suspects_with_license <- 
   inner_join(
   x = gym_suspects, #joining gym_suspects table and person
@@ -393,7 +469,8 @@ gym_suspects_with_license <-
 -   `semi_join()`
 
 ```{r}
-#| label: wd-6-semi, Lab 5
+#| label: wd-6-semi
+# Lab 5
 # Keep only people who attended 3 concerts (semi join)
 suspects <- semi_join(
   x = people_full |> rename(person_id = id),
@@ -414,7 +491,8 @@ suspects <- semi_join(
 -   `pivot_longer()`
 
 ```{r} 
-#| label: wd-7-long, Lab 4 Question 7
+#| label: wd-7-long
+#Lab 4 Question 7
 ca_childcare |>
   select(study_year, diff_counties, mc_infant, mc_toddler, mc_preschool) |>
   pivot_longer(cols = starts_with("mc_"), 
@@ -447,7 +525,8 @@ ca_childcare |>
 -   `pivot_wider()`
 
 ```{r}
-#| label: wd-7-wide, Lab 4 Question 5
+#| label: wd-7-wide
+# Lab 4 Question 5
 
 income_by_region <- ca_childcare |>
   group_by(diff_counties, study_year) |>
@@ -467,7 +546,6 @@ print (income_by_region)
 ```
 
 
-```
 
 ## Reproducibility
 
@@ -486,7 +564,8 @@ The following assignments satisfy the above criteria:
 -   Example of **ggplot2** plotting
 
 ```{r}
-#| label: r-2-1, Challenge 3 Question 2
+#| label: r-2-1
+#Challenge 3 Question 2
 ggplot(data = teacher_evals_compare, aes(x = sen_level, fill = SET_level)) +
   geom_bar(position = "fill") +
   scale_y_continuous(labels = scales::percent_format()) +   # show % on y-axis
@@ -511,12 +590,13 @@ ggplot(data = teacher_evals_compare, aes(x = sen_level, fill = SET_level)) +
 )
 
 ```
-```
+
 
 -   Example of **dplyr** pipeline
 
 ```{r}
-#| label: r-2-2, Lab 3 Question 5
+#| label: r-2-2, 
+#Lab 3 Question 5
 teacher_evals_clean <- evals |>
   rename (sex = gender) |>
   mutate (teacher_id = as.character (teacher_id)) |>
@@ -527,12 +607,13 @@ teacher_evals_clean <- evals |>
 
 ```
 
-```
+
 
 -   Example of function formatting
 
 ```{r}
-#| label: r-2-3, Lab 3 Question 5
+#| label: r-2-3
+#Lab 3 Question5
 teacher_evals_clean <- evals |>
   rename (sex = gender) |>
   mutate (teacher_id = as.character (teacher_id)) |>
@@ -548,9 +629,9 @@ teacher_evals_clean <- evals |>
 -   Example (any context)
 
 ```{r}
-#| label: r-3-example, Lab 4 Question 5
-
-#| label: median-income-by-region-over-time
+#| label: r-3-example
+#Lab 4 Question 5
+#median-income-by-region-over-time
 
 income_by_region <- ca_childcare |>
   group_by(diff_counties, study_year) |>
@@ -569,7 +650,7 @@ income_by_region <- ca_childcare |>
 print (income_by_region)
 ```
 
-```
+
 
 -   Example (function stops)
 
@@ -585,7 +666,8 @@ print (income_by_region)
 -   At least two numeric variables
 
 ```{r}
-#| label: dvs-1-num, Challenge 4 Question 4
+#| label: dvs-1-num
+#Challenge 4 Question 4
 childcare_data <- childcare_data |>
   mutate(
     care_type = recode(
@@ -611,7 +693,8 @@ ggplot(childcare_data, aes(x = study_year,
 -   At least one numeric variable and one categorical variable
 
 ```{r}
-#| label: dvs-2-num-cat, Lab 2 Question 4
+#| label: dvs-2-num-cat
+#Lab 2 Question 4
 untitled_purple <- c("#5e3c99", "#7B68EE", "#a678d6")
 ggplot(data = surveys,
        mapping = aes(x = weight, y = hindfoot_length, color = sex)) +
@@ -636,7 +719,8 @@ ggplot(data = surveys,
 -   At least two categorical variables
 
 ```{r}
-#| label: dvs-2-cat Challenge 4 Question 3
+#| label: dvs-2-cat 
+#Challenge 4 Question 3
 childcare_data <- ca_childcare |>
   pivot_longer(
     cols = c(mcsa, mfccsa),
@@ -667,7 +751,8 @@ summary_table
 -   Dates (time series plot)
 
 ```{r}
-#| label: dvs-2-date Challenge 4, Question 4
+#| label: dvs-2-date 
+#Challenge 4, Question 4
 childcare_data <- childcare_data |>
   mutate(
     care_type = recode(
@@ -695,8 +780,9 @@ ggplot(childcare_data, aes(x = study_year,
 -   I can modify my plot theme to be more readable
 
 ```{r}
-#| label: dvs-2-ex-1, Challenge 2 Question 16, Revised
-#| label: rotated-boxplot
+#| label: dvs-2-ex-1
+#Challenge 2 Question 16, Revised
+#rotated-boxplot
 untitled_green <- c("#1d7c3c", "#F28500")
 ggplot(data = surveys,
        mapping = aes(x = weight,
@@ -724,13 +810,14 @@ ggplot(data = surveys,
 
 ```
 
-```
+
 
 -   I can modify my colors to be accessible to anyone's eyes
 
 ```{r}
-#| label: dvs-2-ex-2, Challenge 2 Question 16, Revised
-#| label: rotated-boxplot
+#| label: dvs-2-ex-2
+#Challenge 2 Question 16, Revised
+# rotated-boxplot
 untitled_green <- c("#1d7c3c", "#F28500")
 ggplot(data = surveys,
        mapping = aes(x = weight,
@@ -760,8 +847,9 @@ ggplot(data = surveys,
 -   I can modify my plot titles to clearly communicate the data context
 
 ```{r}
-#| label: dvs-2-ex-3 Challenge 2 Question 16, Revised
-#| label: rotated-boxplot
+#| label: dvs-2-ex-3
+#Challenge 2 Question 16, Revised
+# rotated-boxplot
 untitled_green <- c("#1d7c3c", "#F28500")
 ggplot(data = surveys,
        mapping = aes(x = weight,
@@ -784,17 +872,16 @@ ggplot(data = surveys,
                                 linewidth = 0.8),
     plot.subtitle = element_markdown(),
     legend.position = "none" 
-
     )
-
 
 ```
 
 -   I can modify the text in my plot to be more readable
 
 ```{r}
-#| label: dvs-2-ex-4, Lab 2, Question 8, Revised
-#| label: scatterplot 2
+#| label: dvs-2-ex-4
+#Lab 2, Question 8, Revised
+# scatterplot 2
 untitled_pink <- c("#a83279", "#FFD700")
 ggplot(data = surveys,
        mapping = aes(x = species,
@@ -821,8 +908,9 @@ ggplot(data = surveys,
 -   I can reorder my legend to align with the colors in my plot
 
 ```{r}
-#| label: dvs-2-ex-5 Challenge 2 Question 16
-#| label: rotated-boxplot
+#| label: dvs-2-ex-5 
+#Challenge 2 Question 16
+# rotated-boxplot
 untitled_green <- c("#1d7c3c", "#F28500")
 ggplot(data = surveys,
        mapping = aes(x = weight,
@@ -851,15 +939,16 @@ ggplot(data = surveys,
 
 ```
 
-```
+
 
 **DVS-3: I show creativity in my visualizations**
 
 -   I can use non-standard colors (Example 1)
 
 ```{r}
-#| label: dvs-3-1-ex-1 Challenge 2 Question 16
-#| label: rotated-boxplot
+#| label: dvs-3-1-ex-1 
+#Challenge 2 Question 16
+#rotated-boxplot
 untitled_green <- c("#1d7c3c", "#F28500")
 ggplot(data = surveys,
        mapping = aes(x = weight,
@@ -891,8 +980,8 @@ ggplot(data = surveys,
 
 ```{r}
 #| label: dvs-3-1-ex-2
-Challenge 2 Question 16
-#| label: rotated-boxplot
+#Challenge 2 Question 16
+# rotated-boxplot
 untitled_green <- c("#1d7c3c", "#F28500")
 ggplot(data = surveys,
        mapping = aes(x = weight,
@@ -939,7 +1028,8 @@ ggplot(data = surveys,
 -   Example using `summarize()`
 
 ```{r}
-#| label: dvs-4-summarize, Lab 3, Question 10
+#| label: dvs-4-summarize
+# Lab 3, Question 10
 teacher_evals_clean |>
   filter(question_no == 901) |>
   group_by(teacher_id) |>
@@ -967,7 +1057,8 @@ teacher_evals_clean |>
 -   Example 1
 
 ```{r}
-#| label: dvs-5-1, Lab 4 Question 6
+#| label: dvs-5-1
+#Lab 4 Question 6
 lowest_income_2018 <- income_by_region |>
   slice_min(Median_Income_2018, n = 1) |>
   select(region = diff_counties, Median_Income_2018)
@@ -999,9 +1090,9 @@ lowest_income_2018
 -   I can modify my column names to clearly communicate the data context
 
 ```{r}
-#| label: dvs-6-ex-1 Lab 4 Question 5, Revised
-
-#| label: median-income-by-region-over-time
+#| label: dvs-6-ex-1 
+#Lab 4 Question 5, Revised
+#median-income-by-region-over-time
 
 income_by_region <- ca_childcare |>
   group_by(diff_counties, study_year) |>
@@ -1031,7 +1122,8 @@ print (income_by_region)
 -   I can arrange my table to have an intuitive ordering
 
 ```{r}
-#| label: dvs-6-ex-3 Lab 3 Question 10
+#| label: dvs-6-ex-3 
+#Lab 3 Question 10
 teacher_evals_clean |>
   filter(question_no == 901) |>
   group_by(teacher_id) |>
@@ -1059,7 +1151,8 @@ teacher_evals_clean |>
 -   I can modify the layout of my table to be more readable (e.g., `pivot_longer()` or `pivot_wider()`)
 
 ```{r}
-#| label: dvs-7-ex-2 Lab 4 Question 5
+#| label: dvs-7-ex-2 
+#Lab 4 Question 5
 
 income_by_region <- ca_childcare |>
   group_by(diff_counties, study_year) |>
@@ -1086,7 +1179,8 @@ print (income_by_region)
 -   using a single function call with multiple inputs (rather than multiple function calls)
 
 ```{r}
-#| label: pe-1-one-call, Lab 5
+#| label: pe-1-one-call
+#Lab 5
 person |>
   filter(address_street_name == "Northwestern Dr") |>
   slice_max(address_number, n = 1) |>
@@ -1165,7 +1259,8 @@ person |>
 -   I can use functions which are not superseded or deprecated
 
 ```{r}
-#| label: pe-4-1,  Lab 4 Question 7
+#| label: pe-4-1
+#Lab 4 Question 7
 n_regions <- n_distinct(ca_childcare$diff_counties)
 region_palette <- colorRampPalette(RColorBrewer::brewer.pal(12, "Paired"))(max(n_regions, 3))
 
@@ -1221,7 +1316,8 @@ ca_childcare |>
 -   I can connect a data wrangling pipeline into a `ggplot()`
 
 ```{r}
-#| label: pe-4-2, Lab 4 Question 7
+#| label: pe-4-2
+#Lab 4 Question 7
 n_regions <- n_distinct(ca_childcare$diff_counties)
 region_palette <- colorRampPalette(RColorBrewer::brewer.pal(12, "Paired"))(max(n_regions, 3))
 
@@ -1297,7 +1393,8 @@ ca_childcare |>
 -   Example 1
 
 ```{r}
-#| label: dsm-2-1 Challenge 3 Question 3
+#| label: dsm-2-1 
+#Challenge 3 Question 3
 chisq.test(
   table(teacher_evals_compare$SET_level, teacher_evals_compare$sen_level)
 )
@@ -1307,8 +1404,9 @@ chisq.test(
 -   Example 2
 
 ```{r}
-#| label: dsm-2-2 Lab 2 Question 17
-#| label: anova
+#| label: dsm-2-2 
+#Lab 2 Question 17
+#anova
 summary(aov(weight ~ species, data = surveys))
 
 ```
@@ -1316,7 +1414,8 @@ summary(aov(weight ~ species, data = surveys))
 -   Example 3
 
 ```{r}
-#| label: dsm-2-3 Lab 1 Question 5
+#| label: dsm-2-3 
+#Lab 1 Question 5
 t.test(len ~ supp, 
        data = ToothGrowth,
        var.equal = FALSE,  

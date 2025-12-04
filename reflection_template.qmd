@@ -36,7 +36,13 @@ evals <- read_csv(here::here("week 3", "teacher_evals.csv"))
 
 ```{r}
 #| label: wd-1-xlsx
-
+# Pratice Activity Week 4
+military <- read_xlsx("gov_spending_per_capita.xlsx",
+                      sheet = ,
+                      skip  = ,
+                      n_max = ,
+                      na = c()
+                      )
 ```
 
 **WD-2: I can select necessary columns from a dataset.**
@@ -1013,6 +1019,47 @@ ggplot(data = surveys,
 
 ```{r}
 #| label: dvs-3-2
+# Lab 7 Question 3
+# Revision inspired by the exempler shown in canvas
+#| label: visual-of-missing-values-over-time
+fish |>
+  mutate(has_missing = if_any(weight, is.na),
+         trip = fct_recode(factor(trip),
+                      "First Survey (Trip 1)" = "1",
+                      "Second Survey (Trip 2)" = "2")) |>
+  group_by(year, section, trip) |>
+  summarize(
+    n_missing = sum(has_missing),
+    n_total = n(),
+    pct_missing = (n_missing / n_total) * 100,
+    .groups = "drop"
+  ) |>
+  ggplot(aes(x = factor(year), 
+             y = n_missing, 
+             fill = section)) +
+  geom_col(position = "dodge", 
+           color = "white", 
+           linewidth = 0.3) +
+  geom_text(aes(label = n_missing), 
+            position = position_dodge(width = 0.9),
+            vjust = -0.5, 
+            size = 3) +
+  facet_wrap(~trip) +
+  labs(
+    x = "",
+    y = "",
+    fill = "River Section",
+    title = "Missing Values in Fish Measurements by Year, Section, and Trip",
+    subtitle = "Rainbow and brown trout measurements across the Blackfoot River"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 13),
+    plot.subtitle = element_text(size = 10, color = "gray40"),
+    strip.text = element_text(face = "bold", size = 11),
+    legend.position = "top"
+  ) +
+  scale_fill_brewer(palette = "Set2")
 
 ```
 
@@ -1020,7 +1067,41 @@ ggplot(data = surveys,
 
 ```{r}
 #| label: dvs-3-3
+#| label: coverage-plot
+# Lab 10 Question 13
+set.seed(123)
 
+# Take a random sample of 100 simulated intervals and give them IDs
+plot_data <- ci_dat |>
+  slice_sample(n = 100) |>
+  mutate(id = row_number())
+
+ggplot(plot_data, aes(x = estimate, y = id)) +
+  geom_errorbarh(
+    aes(xmin = conf.low, xmax = conf.high, color = factor(cover)),
+    height = 0.3
+  ) +
+  geom_point(aes(color = factor(cover))) +
+  geom_vline(xintercept = 0.5, linetype = "dashed") +
+  # colors + legend text
+  scale_color_manual(
+    values = c("0" = "red", "1" = "steelblue"),
+    labels = c("Misses True Slope", "Covers True Slope"),
+    name   = "Coverage"
+  ) +
+  labs(
+    title    = "95% Confidence Intervals of Estimated Slope (100 Simulations)",
+    subtitle = "Red intervals do not include the true slope (β₁ = 0.5)",
+    x        = "Slope Estimate",
+    y        = "Simulation ID"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title    = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 11),
+    legend.title  = element_text(size = 11),
+    legend.text   = element_text(size = 10)
+  )
 ```
 
 **DVS-4: I can calculate numerical summaries of variables.**
@@ -1198,6 +1279,16 @@ person |>
 
 ```{r}
 #| label: pe-1-across
+# Lab 8 Question 2
+rescale_column <- function(df, cols) {
+   if (!is.data.frame(df)) {
+    stop("Input 'df' must be a data frame.")
+  }
+  df |>
+    mutate(
+      across(.cols = {{ cols }}, .fns = ~ rescale_01(.x))
+    )
+}
 
 ```
 
@@ -1205,6 +1296,17 @@ person |>
 
 ```{r}
 #| label: pe-1-map-1
+# Lab 10 Question 4
+factor_cols <- c("course_id", "weekday", "academic_degree",
+                 "time_of_day", "sex")
+
+evals_factors <- evals |> 
+  map_at(factor_cols, as.factor)
+
+new_evals <- bind_cols(evals, evals_factors)
+
+#Revised: changed nested function 
+
 
 ```
 
@@ -1214,6 +1316,24 @@ person |>
 
 ```{r}
 #| label: pe-2-1
+# Lab 7 Question 4
+rescale_01 <- function(x) {
+  #Input must be numeric
+  if (!is.numeric(x)) {
+    stop("Error: Input must be numeric.")
+  }
+  
+  #Input must have length > 1
+  if (length(x) <= 1) {
+    stop("Error: Input must have length greater than 1.")
+  }
+  
+  # If checks pass, do the rescaling
+  (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+}
+
+# Revised: Added input checks for data frame
+# Revised: Revised to use most current form of across () by incorporating ~ and .x
 
 ```
 
@@ -1221,6 +1341,21 @@ person |>
 
 ```{r}
 #| label: pe-2-2
+# Lab 8 
+pivot_table <- function(df, row, col) {
+   if (!is.data.frame(df)) {
+    stop("Input 'df' must be a data frame.")
+  }
+  df |>
+    count({{ row }}, {{ col }}) |>
+    pivot_wider(
+      names_from = {{ col }},
+      values_from = n,
+      values_fill = 0
+    ) |>
+    janitor::adorn_totals(where = c("row", "col"))
+}
+
 
 ```
 
@@ -1237,6 +1372,16 @@ person |>
 
 ```{r}
 #| label: pe-3-across
+# Lab 8 Question 2
+rescale_column <- function(df, cols) {
+   if (!is.data.frame(df)) {
+    stop("Input 'df' must be a data frame.")
+  }
+  df |>
+    mutate(
+      across(.cols = {{ cols }}, .fns = ~ rescale_01(.x))
+    )
+}
 
 ```
 
@@ -1244,6 +1389,16 @@ person |>
 
 ```{r}
 #| label: pe-3-map-1
+# Lab 9 Question 4
+factor_cols <- c("course_id", "weekday", "academic_degree",
+                 "time_of_day", "sex")
+
+evals_factors <- evals |> 
+  map_at(factor_cols, as.factor)
+
+new_evals <- bind_cols(evals, evals_factors)
+
+#Revised: changed nested function 
 
 ```
 
@@ -1260,56 +1415,30 @@ person |>
 
 ```{r}
 #| label: pe-4-1
-#Lab 4 Question 7
-n_regions <- n_distinct(ca_childcare$diff_counties)
-region_palette <- colorRampPalette(RColorBrewer::brewer.pal(12, "Paired"))(max(n_regions, 3))
+#Lab 10 Question 2
+summary_df <- enframe(results, name = NULL, value = "Number_Correct") |>
+  count(Number_Correct, name = "Count") |>
+  complete(Number_Correct = 0:4, fill = list(Count = 0)) |>
+  arrange(Number_Correct) |>
+  mutate(Probability = Count / sum(Count))
 
-ca_childcare |>
-  select(
-    study_year,
-    diff_counties,
-    mc_infant, mc_toddler, mc_preschool
+summary_df |>
+  gt() |>
+  cols_label(
+    Number_Correct = "Number of Correct Matches",
+    Count = "Frequency",
+    Probability = "Probability"
   ) |>
-  pivot_longer(
-    cols      = starts_with("mc_"),
-    names_to  = "age_group",
-    values_to = "price"
+  fmt_percent(columns = Probability, decimals = 1) |>
+  tab_header(
+    title = "Random Reassignment of Babies to Parents",
+    subtitle = "Number of babies correctly returned to their own parents when 4 babies are assigned at random"
   ) |>
-  mutate(
-    age_group = case_match (
-      age_group,
-      "mc_infant"    ~ "Infant",
-      "mc_toddler"   ~ "Toddler",
-      "mc_preschool" ~ "Preschool"
-    ),
-    age_group = factor(age_group, levels = c("Infant","Toddler","Preschool"))
-  ) |>
-  group_by(diff_counties) |>
-  mutate(order_val = median(price, na.rm = TRUE)) |>
-  ungroup() |>
-  mutate(
-    diff_counties = fct_reorder(diff_counties, order_val, .na_rm = TRUE)
-  ) |>
-  ggplot(
-    mapping = aes(x = study_year, y = price, color = diff_counties)
-  ) +
-  geom_point(alpha = 0.6) +
-  geom_smooth() +
-  facet_wrap(~ age_group, nrow = 1) +
-  scale_x_continuous(breaks = c(2008, 2010, 2012, 2014, 2016, 2018)) +
-  scale_color_manual(name = "California Region", values = region_palette) +
- labs(
-    title = "Weekly Median Price for Center-Based Childcare ($)",
-    x = "Study Year",
-    y = ""
-  ) +
- theme_minimal(base_size = 8) +
-  theme(
-    aspect.ratio = 1,
-    panel.border = element_rect(color = "black", linewidth = 0.8)
+  tab_source_note(
+    "A 'correct match' means a baby was given back to the correct parents."
   )
+# Revised: Added context of the reassignment of babies to the table
 
- 
 
 ```
 
@@ -1394,10 +1523,7 @@ ca_childcare |>
 
 ```{r}
 #| label: dsm-2-1 
-#Challenge 3 Question 3
-chisq.test(
-  table(teacher_evals_compare$SET_level, teacher_evals_compare$sen_level)
-)
+
 
 ```
 

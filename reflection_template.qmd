@@ -215,32 +215,19 @@ concert_3x_dec <- facebook_event_checkin |>
 
 ```{r}
 #| label: wd-4-numeric-ex-1
-# Challenge 4  Question 3
-```{r}
-childcare_data <- ca_childcare |>
-  pivot_longer(
-    cols = c(mcsa, mfccsa),
-    names_to = "care_type",
-    values_to = "full_time_median_price"
-  ) |>
-   mutate(
-    care_type = recode(care_type,
-      mcsa = "Center-Based Care ",
-      mfccsa = "Family Childcare"
-    ) 
+# Challenge 3 Question 1
+teacher_evals_compare <- evals |>
+  filter(question_no == 903) |>
+  mutate(
+    SET_level = if_else(SET_score_avg >= 4, "excellent", "standard"),
+    sen_level = if_else(
+      seniority <= 4, "junior",
+      if_else(seniority <= 10, "mid", "senior")
     )
+  ) |>
+  select(course_id, SET_level, sen_level)
 
-summary_table <- childcare_data |>
-  group_by(care_type) |>
-  summarise(
-     n = n(),
-    mean_price = mean(full_time_median_price),
-    min_price = min(full_time_median_price),
-    max_price = max(full_time_median_price)
-                      
-  )
-
-summary_table
+teacher_evals_compare
 ```
 
 
@@ -248,35 +235,45 @@ summary_table
 -   Numeric Example 2
 
 ```{r}
-# Lab 3, Question 10
-teacher_evals_clean |> #question-1-high-low
-  filter(question_no == 901) |>
-  group_by(teacher_id) |>
-  summarize(
-    n_courses = n_distinct(course_id),
-    avg_q1_score = mean(SET_score_avg, na.rm = TRUE),
-    .groups = "drop"  ) |>
-  filter(n_courses >= 5) |>
-  filter(avg_q1_score == min(avg_q1_score) | 
-         avg_q1_score == max(avg_q1_score)) |>
-  arrange (desc(avg_q1_score) )
+# Lab 5
+#Getting the crime scene report by filtering the date, city, and type.
+crime_scene_report <- crime_scene_report |>
+  mutate(date = ymd(date)) 
+
+crime_scene_report |>
+  filter(date == ymd("2018-01-15"),
+         city == "SQL City", 
+         type == "murder") |> #found the crime report
+  pull (description)
+# Revised: Initially jsut filtered the number of the date, but converted into a date-time varaible (demonstrated my ability to work with date variables using the lubridate package (e.g., WD-3 & WD-4).)
+
 
 ```
-
 
 
 -   Factor Example 1 (renaming levels)
 
 ```{r}
 #| label: wd-4-factor-ex-1, 
-# Lab 3 Question 5
-teacher_evals_clean <- evals |>
-  rename (sex = gender) |>
-  mutate (teacher_id = as.character (teacher_id)) |>
-  filter(no_participants >= 10) |>
-  select (course_id, teacher_id, question_no, no_participants, 
-         resp_share, SET_score_avg, percent_failed_cur, 
-         academic_degree, seniority, sex) 
+# Lab 4 Question 3
+ca_childcare <- ca_childcare |>
+  left_join(
+    tax_rev |>
+      mutate(
+        county_name = entity_name,
+        study_year  = year
+      ) |>
+      semi_join(
+        ca_childcare |>
+          select(county_name, study_year) |>
+          distinct(),
+        by = c("county_name", "study_year")
+      ) |>
+      arrange(county_name, study_year) |>
+      distinct(county_name, study_year, .keep_all = TRUE),
+    by = c("county_name", "study_year")
+   ) #got inspiration from peer review 
+ca_childcare
 
 ```
 
@@ -341,19 +338,25 @@ ca_childcare |>
 
 ```{r}
 #| label: wd-4-string
-# Lab 5
- gym_suspects <-
-  inner_join( 
-    x = get_fit_now_check_in,
-    y = get_fit_now_member,
-    by = join_by (membership_id == id)) |> #joining two tables
-  filter(
-    membership_status == "gold",
-    str_detect(membership_id, "^48Z")) |>
-  filter (check_in_date == '20180109') 
+# Lab 4 Question 4
+ca_childcare <- ca_childcare |> 
+  mutate (
+    county_name = str_remove(county_name, " County"),
+    diff_counties = fct_collapse(
+      .f = county_name,  
+      "Superior Counties" = superior_counties,
+      "North Coast Counties" = north_coast_counties,
+      "San Francisco Counties" = san_fran_counties,
+      "North San Joaquin Counties" = n_san_joaquin_counties,
+      "Central Coast Counties" = central_coast_counties,
+      "South San Joaquin Counties" = s_san_joaquin_counties,
+      "Inland Counties" = inland_counties,
+      "Los Angeles County" = la_county,
+      "Orange County" = orange_county,
+      "San Diego–Imperial Counties" = san_diego_imperial_counties
+    ))
 
-gym_suspects |>
-  pull (name)
+print (ca_childcare)
 
 ```
 
@@ -476,13 +479,25 @@ gym_suspects_with_license <-
 
 ```{r}
 #| label: wd-6-semi
-# Lab 5
-# Keep only people who attended 3 concerts (semi join)
-suspects <- semi_join(
-  x = people_full |> rename(person_id = id),
-  y = concert_3x_dec,
-  by = "person_id"
-)
+# Lab 4 Question 3
+ca_childcare <- ca_childcare |>
+  left_join(
+    tax_rev |>
+      mutate(
+        county_name = entity_name,
+        study_year  = year
+      ) |>
+      semi_join(
+        ca_childcare |>
+          select(county_name, study_year) |>
+          distinct(),
+        by = c("county_name", "study_year")
+      ) |>
+      arrange(county_name, study_year) |>
+      distinct(county_name, study_year, .keep_all = TRUE),
+    by = c("county_name", "study_year")
+   ) #got inpiration from peer review 
+ca_childcare
 ```
 
 -   `anti_join()`
@@ -636,24 +651,15 @@ teacher_evals_clean <- evals |>
 
 ```{r}
 #| label: r-3-example
-#Lab 4 Question 5
-#median-income-by-region-over-time
+# Lab 10 Question 2
+summary_df <- enframe(results, name = NULL, value = "Number_Correct") |>
+  count(Number_Correct, name = "Count") |>
+  complete(Number_Correct = 0:4, fill = list(Count = 0)) |>
+  arrange(Number_Correct) |>
+  mutate(Probability = Count / sum(Count))
 
-income_by_region <- ca_childcare |>
-  group_by(diff_counties, study_year) |>
-  summarise(
-    median_income = median(mhi_2018, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
-  filter(study_year %in% c(2008, 2018)) |>
-  pivot_wider(
-    names_from = study_year,
-    values_from = median_income,
-    names_prefix = "Median_Income_") |>
-   arrange(desc(Median_Income_2018)
-  )
 
-print (income_by_region)
+
 ```
 
 
@@ -662,7 +668,24 @@ print (income_by_region)
 
 ```{r}
 #| label: r-3-function-stops
+# Lab 7 Question 4
+rescale_01 <- function(x) {
+  #Input must be numeric
+  if (!is.numeric(x)) {
+    stop("Error: Input must be numeric.")
+  }
+  
+  #Input must have length > 1
+  if (length(x) <= 1) {
+    stop("Error: Input must have length greater than 1.")
+  }
+  
+  # If checks pass, do the rescaling
+  (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+}
 
+# Revised: Added input checks for data frame
+# Revised: Revised to use most current form of across () by incorporating ~ and .x
 ```
 
 ## Data Visualization & Summarization
@@ -1163,6 +1186,19 @@ lowest_income_2018
 
 ```{r}
 #| label: dvs-5-2
+# Lab 3, Question 10
+teacher_evals_clean |>
+  filter(question_no == 901) |>
+  group_by(teacher_id) |>
+  summarize(
+    n_courses = n_distinct(course_id),
+    avg_q1_score = mean(SET_score_avg, na.rm = TRUE),
+    .groups = "drop"  ) |>
+  filter(n_courses >= 5) |>
+  filter(avg_q1_score == min(avg_q1_score) | 
+         avg_q1_score == max(avg_q1_score)) |>
+  arrange (desc(avg_q1_score) )
+
 
 ```
 
@@ -1225,6 +1261,24 @@ teacher_evals_clean |>
 
 ```{r}
 #| label: dvs-7-ex-1
+# Lab 9 Question 8
+
+gt_colors <- function(x) ifelse(as.integer(x) == 0, "#006400", "#FF8C00")
+
+missing_tbl |>
+  gt() |>
+  cols_label(
+    `Measurement Variable` = md("**Measurement Variable**"),
+    `Missing Values`       = md("**Missing Values**")
+  ) |>
+  data_color(
+    columns = c(`Missing Values`),
+    colors  = gt_colors
+  ) |>
+  tab_header(
+    title    = md("**Number of Missing Values for Fish Measurements**"),
+    subtitle = md("Data Collected from 1989 to 2006 on the Blackfoot Fish River in Montana")
+  )
 
 
 ```
@@ -1507,6 +1561,21 @@ ca_childcare |>
 
 ```{r}
 #| label: dsm-1-1
+# Lab 10 Question 8 
+mycifun <- function(beta0, beta1, n) {
+  x  <- runif(n, 0, 1)
+  ep <- rnorm(n, mean = 0, sd = 1)
+  y  <- beta0 + beta1 * x + ep
+  
+  fit <- lm(y ~ x)
+
+  tidy(fit, conf.int = TRUE) |>
+    filter(term == "x") |>
+    mutate(
+      cover = ifelse(conf.low <= beta1 & beta1 <= conf.high, 1, 0)
+      # Revised:  Removed the unnecessary creation of a new data frame.
+    )
+}
 
 ```
 
@@ -1514,6 +1583,28 @@ ca_childcare |>
 
 ```{r}
 #| label: dsm-1-2
+# Lab 10 Question 4
+set.seed(123)
+# define slope and intercept parameters
+intercept = 2
+slope = 1
+
+# generate x vector
+x = runif(100, 0, 1)
+
+# generate noise `ep` vector
+ep = rnorm(100, mean = 0, sd = 1)
+
+# generate outcome from population model
+y = intercept + x*slope + ep
+
+
+# create an "observed data" dataframe with only the x and y vectors
+observed_data = data.frame(x = x, y = y)
+
+head(observed_data)
+
+```
 
 ```
 

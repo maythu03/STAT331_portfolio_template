@@ -383,14 +383,17 @@ concert_3x_dec <- facebook_event_checkin |>
 
 ```{r}
 # Lab 4 Question 2
+# Revised:changed in a pipe with x:y
 
 ca_childcare <- childcare_costs |>
   left_join(
-    x = childcare_costs,
-    y = counties,
-    by = join_by("county_fips_code")
-  ) |>
-  filter(state_abbreviation == "CA")
+    counties |>
+      filter(state_abbreviation == "CA") |>
+      arrange(county_fips_code) |>
+      distinct(county_fips_code, .keep_all = TRUE),
+    by = join_by(county_fips_code)
+  )
+
   
 
 ```
@@ -401,13 +404,15 @@ ca_childcare <- childcare_costs |>
 #| label: wd-5-right
 # Lab 4 Question 2 Revised
 # Made a left join into right join
-ca_childcare <- childcare_costs |>
-  right_join (
-    x = counties,
-    y = childcare_costs,
-    by = join_by("county_fips_code")
+ca_childcare <- counties |>
+  right_join(
+    childcare_costs |>
+      arrange(county_fips_code) |>
+      distinct(county_fips_code, .keep_all = TRUE),
+    by = join_by(county_fips_code)
   ) |>
   filter(state_abbreviation == "CA")
+
 ```
 
 -   `left_join()` **or** `right_join()` Example 2
@@ -504,6 +509,67 @@ ca_childcare
 
 ```{r}
 #| label: wd-6-anti
+# Lab 5
+# Revised: Changed inner_join to anti_join, and still having the same output
+# Did 2 lines of anti_join
+# Based on the murderer interview finding who hired him based on his hints.
+
+# Find people who attended SQL Symphony Concert 3 times in Dec 2017 
+concert_3x_dec <- facebook_event_checkin |>
+  mutate(date = ymd(date)) |>      # convert numeric dates (like 20171210) into proper Date objects            
+  filter(
+    event_name == "SQL Symphony Concert", 
+    date %within% interval(ymd("2017-12-01"), ymd("2017-12-31")) # between these dates 
+  ) |>
+  count(person_id, name = "n") |>
+  filter(n == 3) |>
+  select(person_id) 
+
+# Join the 'person' table with the 'drivers_license' table
+people_with_license <- inner_join(
+  x = person,
+  y = drivers_license,
+  by = join_by(license_id == id)
+)
+
+# Join that result with income data 
+people_full <- inner_join(
+  x = people_with_license,
+  y = income,
+  by = join_by(ssn)
+)
+
+# Rename id -> person_id so it matches concert_3x_dec
+people_full_renamed <- people_full |>
+  rename(person_id = id)
+
+# --- Use ANTI JOIN instead of  SEMI JOIN ---
+
+#People in people_full_renamed who did NOT attend 3 concerts
+non_concert_3x <- anti_join(
+  x = people_full_renamed,
+  y = concert_3x_dec,
+  by = "person_id"
+)
+
+# Drop those from the full set -> keep ONLY those who DID attend 3 concerts
+suspects <- anti_join(
+  x = people_full_renamed,
+  y = non_concert_3x,
+  by = "person_id"
+)
+
+# Apply filters from the murderer's description (the “woman who hired him”)
+suspects |>
+  filter(
+    gender == "female",
+    height %in% c(65, 67),
+    hair_color == "red",
+    car_make  == "Tesla",
+    car_model == "Model S"
+  ) |>
+  arrange(desc(annual_income))  # “a lot of money” — sort by richest first
+
 
 ```
 
@@ -548,7 +614,7 @@ ca_childcare |>
 ```{r}
 #| label: wd-7-wide
 # Lab 4 Question 5
-
+# Revised: Gave better column names 
 income_by_region <- ca_childcare |>
   group_by(diff_counties, study_year) |>
   summarise(
@@ -559,8 +625,8 @@ income_by_region <- ca_childcare |>
   pivot_wider(
     names_from = study_year,
     values_from = median_income,
-    names_prefix = "year_") |>
-   arrange(desc(year_2018)
+    names_prefix = "Median_Income_") |>
+   arrange(desc(Median_Income_2018)
   )
 
 print (income_by_region)
@@ -706,16 +772,7 @@ childcare_data <- childcare_data |>
     )
 ggplot(childcare_data, aes(x = study_year, 
                            y = full_time_median_price, 
-                           color = care_type)) +
-  geom_point (alpha = 0.7, position = position_jitter(width = 0.2)) +
-  geom_smooth(method = "lm") +
-  labs(
-    title = "Full-Time Median Childcare Prices in California by Year and Care Type",
-    subtitle = "Comparing Center-Based vs Family (In-Home) Care",
-    x = "Study Year",
-    y = "Full-Time Median Price (2018 dollars)",
-    color = "Care Type"
-  ) 
+
 
 ```
 
@@ -749,31 +806,48 @@ ggplot(data = surveys,
 
 ```{r}
 #| label: dvs-2-cat 
-#Challenge 4 Question 3
-childcare_data <- ca_childcare |>
-  pivot_longer(
-    cols = c(mcsa, mfccsa),
-    names_to = "care_type",
-    values_to = "full_time_median_price"
+# Lab 7 Question 3
+# Revision inspired by the exempler shown in canvas
+#| label: visual-of-missing-values-over-time
+fish |>
+  mutate(has_missing = if_any(weight, is.na),
+         trip = fct_recode(factor(trip),
+                      "First Survey (Trip 1)" = "1",
+                      "Second Survey (Trip 2)" = "2")) |>
+  group_by(year, section, trip) |>
+  summarize(
+    n_missing = sum(has_missing),
+    n_total = n(),
+    pct_missing = (n_missing / n_total) * 100,
+    .groups = "drop"
   ) |>
-   mutate(
-    care_type = recode(care_type,
-      mcsa = "Center-Based Care ",
-      mfccsa = "Family Childcare"
-    ) 
-    )
-
-summary_table <- childcare_data |>
-  group_by(care_type) |>
-  summarise(
-     n = n(),
-    mean_price = mean(full_time_median_price),
-    min_price = min(full_time_median_price),
-    max_price = max(full_time_median_price)
-                      
-  )
-
-summary_table
+  ggplot(aes(x = factor(year), 
+             y = n_missing, 
+             fill = section)) +
+  geom_col(position = "dodge", 
+           color = "white", 
+           linewidth = 0.3) +
+  geom_text(aes(label = n_missing), 
+            position = position_dodge(width = 0.9),
+            vjust = -0.5, 
+            size = 3) +
+  facet_wrap(~trip) +
+  labs(
+    x = "",
+    y = "",
+    fill = "River Section",
+    title = "Missing Values in Fish Measurements by Year, Section, and Trip",
+    subtitle = "Rainbow and brown trout measurements across the Blackfoot River"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold", size = 13),
+    plot.subtitle = element_text(size = 10, color = "gray40"),
+    strip.text = element_text(face = "bold", size = 11),
+    legend.position = "top"
+  ) +
+  scale_fill_brewer(palette = "Set2")
+   
 
 ```
 
@@ -938,32 +1012,32 @@ ggplot(data = surveys,
 
 ```{r}
 #| label: dvs-2-ex-5 
-#Challenge 2 Question 16
-# rotated-boxplot
-untitled_green <- c("#1d7c3c", "#F28500")
-ggplot(data = surveys,
-       mapping = aes(x = weight,
-                     y = species, 
-                     color = sex)) + #entered space to make the code more readable
-       scale_color_manual(values = untitled_green) +
-       geom_jitter(color = "blue",
-                   alpha = 0.1) +
-       geom_boxplot( outlier.shape = NULL) +
-       labs (  x = "Weight of animal (g)",
-               y = "Species of an animal",
-               title = "Does species differ by weight?",   #entered space to make the code more readable
-               subtitle = "Separated by 
-              <span style = 'color:#1d7c3c;'>Female</span> and 
-              <span style = 'color:#F28500;'>Male</span>" ) +
-        theme(
-    plot.title = element_text(size = 16, face = "bold"),
-    panel.border = element_rect(color = "black",
-                                fill = NA,
-                                linewidth = 0.8),
-    plot.subtitle = element_markdown(),
-    legend.position = "none" 
+# Chalenge 7 Question 5
+fish |>
+  group_by(year, species) |>
+  summarize(mean_condition = mean(condition_index, na.rm = TRUE)) |>
+  ggplot(aes(x = year, y = mean_condition, color = species)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2) +
+  labs(
+    title = "Mean Fish Condition Over Time by Species",
+    x = "Year",
+    y = "Mean Condition Index",
+    color = "Species"
+  ) +
+  scale_color_brewer(
+    palette = "Dark2",
+    breaks = c("WCT", "RBT", "Brown", "Bull")   # NEW legend order
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "right",
+    panel.border = element_rect(color = "black", linewidth = 0.5)
+  )
 
-    )
+
+  
 
 
 ```
@@ -1009,32 +1083,20 @@ ggplot(data = surveys,
 
 ```{r}
 #| label: dvs-3-1-ex-2
-#Challenge 2 Question 16
-# rotated-boxplot
-untitled_green <- c("#1d7c3c", "#F28500")
-ggplot(data = surveys,
-       mapping = aes(x = weight,
-                     y = species, 
-                     color = sex)) + #entered space to make the code more readable
-       scale_color_manual(values = untitled_green) +
-       geom_jitter(color = "blue",
-                   alpha = 0.1) +
-       geom_boxplot( outlier.shape = NULL) +
-       labs (  x = "Weight of animal (g)",
-               y = "Species of an animal",
-               title = "Does species differ by weight?",   #entered space to make the code more readable
-               subtitle = "Separated by 
-              <span style = 'color:#1d7c3c;'>Female</span> and 
-              <span style = 'color:#F28500;'>Male</span>" ) +
-        theme(
-    plot.title = element_text(size = 16, face = "bold"),
-    panel.border = element_rect(color = "black",
-                                fill = NA,
-                                linewidth = 0.8),
-    plot.subtitle = element_markdown(),
-    legend.position = "none" 
+# Lab 10 Question 3
+ggplot(summary_df, aes(x = factor(Number_Correct), y = Probability)) +
+  geom_col(fill = "gold") +
+  scale_y_continuous(labels = label_percent(accuracy = 1)) +
+  labs(
+    title = "Simulated Probability Distribution of Correct Baby Returns",
+    x = "Number of Correct Matches",
+    y = "Probability"
+  ) +
+  theme_minimal() +
+  theme(
+        plot.title = element_text(size = 16, face = "bold"),
+        panel.border = element_rect(color = "black", linewidth = 0.8))
 
-    )
 
 ```
 
@@ -1153,6 +1215,17 @@ teacher_evals_clean |>
 
 ```{r}
 #| label: dvs-4-across
+Lab 7 Question 1
+missing_vals <- fish |>
+   summarize(
+    observation_missing = sum(rowSums(across(everything(), ~ is.na(.x))) > 0),
+    across(
+      .cols = where(~ any(is.na(.x))),
+      .fns  = ~ sum(is.na(.x)),
+       .names = "number_missing_in_{.col}"
+    )
+  )
+missing_vals
 
 ```
 
@@ -1233,6 +1306,25 @@ print (income_by_region)
 
 ```{r}
 #| label: dvs-6-ex-2
+# Lab 9 Question 6
+academic_table_kbl <- academic_table |>
+  mutate(
+    `%` = label_percent(accuracy = 0.1)(prop)
+  ) |>
+  # Revised: Changed superseded percent () to label_percent()
+  select(Demographic, Group, Count, `%`) |>
+  kbl(
+    col.names = c("Demographic", "Group", "Count", "%"),
+    caption = "Demographics of Professors at the University of Poland, Warsaw in 2020",
+    booktabs = TRUE,
+    align = c("l","l","c","c")
+  ) |>
+  add_header_above(c(" " = 2, "Professor" = 2)) |>
+  kable_styling(full_width = FALSE, bootstrap_options = "striped") |>
+  row_spec(0, bold = TRUE) |>
+  collapse_rows(columns = 1, valign = "top")
+
+academic_table_kbl
 
 ```
 

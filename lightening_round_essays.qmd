@@ -6,16 +6,22 @@ editor: visual
 
 **Answer each of the following questions with *one sentence* including a brief explanation.**
 
-1. Finish the sentence with another student’s name: "If [Name of Student] doesn’t earn an A, then nobody should, because..." Explain your choice and your reasoning.
+1.  Finish the sentence with another student’s name: "If \[Name of Student\] doesn’t earn an A, then nobody should, because..." Explain your choice and your reasoning.
 
+    If Otis Hunt doesn’t earn an A, then nobody should, because during the in-class activity he was able to explain and teach me concepts that I didn't understand.
 
-2. What was the most difficult part of the class for you? List a general topic, a specific problem, a kind of work we did, etc. and explain why.
+2.  What was the most difficult part of the class for you? List a general topic, a specific problem, a kind of work we did, etc. and explain why.
 
+    The most difficult part of the class was making data joins. I struggled with data joins as there are many different join functions and it was quite confusing which one to use at first.
 
-3. What was the easiest part of the class for you? Explain why.
+3.  What was the easiest part of the class for you? Explain why.
 
+    The easiest part of the class was making ggplots because the code was easy to write and working it with colors were quite fun.
 
-4. What part of the class surprised or interested you the most? Explain why.
+4.  What part of the class surprised or interested you the most? Explain why.
 
+    The part of the class that surprised me was how we could redo our lab assignments every week as it is also a way to learn from our mistakes and reflect from it. I was able to learn more.
 
-5. Give one piece of advice to a student just beginning a quarter of STAT 331 that will help them be successful in learning.
+5.  Give one piece of advice to a student just beginning a quarter of STAT 331 that will help them be successful in learning.
+
+    I would say to it is helpful to read the readings before class and work on the check-ins beforehand.

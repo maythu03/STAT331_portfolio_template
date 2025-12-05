@@ -66,7 +66,18 @@ teacher_evals_clean <- evals |>
 
 ```{r}
 #| label: wd-2-ex-2
-
+# Lab 4 Question 2
+# Revised:changed in a pipe with x:y and remove unnecessary columns
+ca_childcare <- ca_childcare |>
+  left_join(
+    tax_rev |>
+      mutate(
+        county_name = entity_name,
+        study_year  = year
+      ) |>
+      select(-entity_name, -year),   # remove old columns after renaming
+    by = c("county_name", "study_year")
+  )
 
 ```
 
@@ -394,7 +405,6 @@ ca_childcare <- childcare_costs |>
     by = join_by(county_fips_code)
   )
 
-  
 
 ```
 
@@ -436,7 +446,7 @@ ca_childcare <- ca_childcare |>
       arrange(county_name, study_year) |>
       distinct(county_name, study_year, .keep_all = TRUE),
     by = c("county_name", "study_year")
-   ) #got inpiration from peer review 
+   ) #got inspiration from peer review 
 
 
 ```
@@ -644,7 +654,7 @@ The following assignments satisfy the above criteria:
 -   Lab 3
 -   Lab 2 Challenge
 -   Lab 3 Challenge
--   Example 5
+-   Lab 7
 
 **R-2: I can write well documented and tidy code.**
 
@@ -700,14 +710,15 @@ teacher_evals_clean <- evals |>
 
 ```{r}
 #| label: r-2-3
-#Lab 3 Question5
-teacher_evals_clean <- evals |>
-  rename (sex = gender) |>
-  mutate (teacher_id = as.character (teacher_id)) |>
-  filter(no_participants >= 10) |>
-  select (course_id, teacher_id, question_no, no_participants, 
-         resp_share, SET_score_avg, percent_failed_cur, 
-         academic_degree, seniority, sex) 
+missing_vals_long <- missing_vals |>
+  mutate(across(everything(), as.character)) |> 
+  pivot_longer(
+    cols = everything(),
+    names_to = "Metric",
+    values_to = "Value"
+  )
+
+missing_vals_long
 
 ```
 
@@ -1379,24 +1390,57 @@ missing_tbl |>
 
 ```{r}
 #| label: dvs-7-ex-2 
-#Lab 4 Question 5
+# Lab 9 Question 5
+academic_table <- evals |>
+  distinct(teacher_id, .keep_all = TRUE) |>
+  mutate(
+    # Seniority buckets
+    sen_level = case_when(
+      seniority <= 4 ~ "Junior",
+      seniority <= 8 ~ "Senior",
+      seniority >  8 ~ "Very Senior",
+      TRUE ~ NA_character_
+    ),
 
-income_by_region <- ca_childcare |>
-  group_by(diff_counties, study_year) |>
-  summarise(
-    median_income = median(mhi_2018, na.rm = TRUE),
-    .groups = "drop"
+    # Standardize academic_degree without recode()
+    academic_degree = str_replace_all(academic_degree, c(
+      "no degree" = "No Degree",
+      "masters" = "Masters",
+      "doctorate" = "Doctorate",
+      "tenured professor" = "Tenured Professor"
+    )),
+
+    #Revised: use str_replace_all instead of recode 
+    sex = str_replace_all(sex, c(
+      "female" = "Female",
+      "male"   = "Male"
+    ))
   ) |>
-  filter(study_year %in% c(2008, 2018)) |>
-  pivot_wider(
-    names_from = study_year,
-    values_from = median_income,
-    names_prefix = "year_") |>
-   arrange(desc(year_2018)
+  select(
+    `Academic Degree` = academic_degree,
+    Seniority = sen_level,
+    Sex = sex
+  ) |>
+  pivot_longer(
+    everything(),
+    names_to = "Demographic",
+    values_to = "Group"
+  ) |>
+  filter(!is.na(Group)) |>
+  count(Demographic, Group, name = "Count") |>
+  group_by(Demographic) |>
+  mutate(prop = Count / sum(Count)) |>
+  ungroup() |>
+  rename(Prop = prop) 
+
+academic_table_format <- academic_table |>
+  knitr::kable(align = c("l","l","r","r")) |>
+  kableExtra::kable_styling(
+    full_width = FALSE,
+    bootstrap_options = "striped"
   )
 
-print (income_by_region)
-
+academic_table_format
 ```
 
 ## Program Efficiency
@@ -1509,6 +1553,12 @@ pivot_table <- function(df, row, col) {
 
 ```{r}
 #| label: pe-2-3
+# Lab 7 Question 1
+data_type <- map_chr(surveys, ~ class(.x)[1]) |>
+  enframe(name = "Variable", value = "Data Type")
+
+kable(data_type)
+
 
 ```
 
@@ -1535,16 +1585,20 @@ rescale_column <- function(df, cols) {
 
 ```{r}
 #| label: pe-3-map-1
-# Lab 9 Question 4
-factor_cols <- c("course_id", "weekday", "academic_degree",
-                 "time_of_day", "sex")
-
-evals_factors <- evals |> 
-  map_at(factor_cols, as.factor)
-
-new_evals <- bind_cols(evals, evals_factors)
-
-#Revised: changed nested function 
+# Lab 7 Question 7
+missing_tbl <- map_int(fish, ~ sum(is.na(.x))) |>
+  enframe(name = "Measurement Variable", value = "Missing Values") |>
+  mutate(`Missing Values` = as.integer(`Missing Values`)) |>
+  arrange(desc(`Missing Values`))  
+# Revised: Added the arrange descending order line to have the table easier to visualize 
+missing_tbl |>
+  kbl(
+    col.names = c("Variable", "Missing Values"),
+    caption = "Number of Missing Values for Each Variable for Fish Measurements",
+    booktabs = TRUE, align = c("l","c")
+  ) |>
+  kable_styling(full_width = FALSE, bootstrap_options = "striped") |>
+  row_spec(0, bold = TRUE)
 
 ```
 
@@ -1552,6 +1606,12 @@ new_evals <- bind_cols(evals, evals_factors)
 
 ```{r}
 #| label: pe-3-map-2
+# Lab 7 Question 1
+data_type <- map_chr(surveys, ~ class(.x)[1]) |>
+  enframe(name = "Variable", value = "Data Type")
+
+kable(data_type)
+
 
 ```
 
@@ -1706,7 +1766,9 @@ head(observed_data)
 
 ```{r}
 #| label: dsm-2-1 
-
+# Lab 4 Question 9
+reg_mod1 <- lm(mc_infant ~ me_2018, data = ca_childcare)
+summary(reg_mod1)
 
 ```
 

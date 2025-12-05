@@ -1061,8 +1061,8 @@ fish |>
 
 ```{r}
 #| label: dvs-3-1-ex-1 
-#Challenge 2 Question 16
-#rotated-boxplot
+# Challenge 2 Question 16
+# rotated-boxplot
 untitled_green <- c("#1d7c3c", "#F28500")
 ggplot(data = surveys,
        mapping = aes(x = weight,
@@ -1163,7 +1163,6 @@ fish |>
 
 ```{r}
 #| label: dvs-3-3
-#| label: coverage-plot
 # Lab 10 Question 13
 set.seed(123)
 
@@ -1226,7 +1225,7 @@ teacher_evals_clean |>
 
 ```{r}
 #| label: dvs-4-across
-Lab 7 Question 1
+# Lab 7 Question 1
 missing_vals <- fish |>
    summarize(
     observation_missing = sum(rowSums(across(everything(), ~ is.na(.x))) > 0),
@@ -1808,7 +1807,7 @@ Earlier in the course, when there was conclusion I just wrote what the table and
 
 <!-- How did you extended your thinking throughout the course? How did you extend your thinking on the code examples you have provided in your portfolio? -->
 
-Beyond the course,I extened my thinking through exploring different color palletes. In lab 4 I explored the RColorBrewer package with the Paried palletes. Additionally in Challenge Lab 2 I explored different colors that is beyond just simple colors like "red." An example I extended my thinking was in Lab 4 instead of selecting columns names I simplified it to columns that starts with "mc" because all of the columns I wanted all started with "mc". Throughout the course, I extended my thinking by learning to approach code to answer the question, but as a way to reason through data quality, and communication. In my early work, I focused mostly on producing results that “looked right,” but through feedback and practice, I began thinking more critically about how my code ensured accuracy and clarity. For example, in Lab 5 I had a hard time joining four different tables (facebook event check in, person, driver lincese, income tables). I realized each join defines a logical link between data tables and that the join order determines which observations are retained. For example, in the final version of my code, I first used inner_join() to connect person with drivers_license, then joined that result to income using a shared ssn, and finally used a semi_join() to keep only those people who attended three concerts in December. This process helped me see joins not just as technical operations, but as tools for refining a dataset to match the exact scope of data I want. For data plots I have extneded by thinking I learned that thoughtful design choices  like percentage formatting and consistent labeling  help ensure that visual outputs support the analytical information I want to tell the viewers.
+Beyond the course,I extened my thinking through exploring different color palletes. In lab 4 I explored the RColorBrewer package with the Paried palletes. Additionally in Challenge Lab 2 I explored different colors that is beyond just simple colors like "red." An example I extended my thinking was in Lab 4 instead of selecting columns names I simplified it to columns that starts with "mc" because all of the columns I wanted all started with "mc". Throughout the course, I extended my thinking by learning to approach code to answer the question, but as a way to reason through data quality, and communication. In my early work, I focused mostly on producing results that “looked right,” but through feedback and practice, I began thinking more critically about how my code ensured accuracy and clarity. For example, in Lab 5 I had a hard time joining four different tables (facebook event check in, person, driver lincese, income tables). I realized each join defines a logical link between data tables and that the join order determines which observations are retained. For example, in the final version of my code, I first used inner_join() to connect person with drivers_license, then joined that result to income using a shared ssn, and finally used a semi_join() to keep only those people who attended three concerts in December. This process helped me see joins not just as technical operations, but as tools for refining a dataset to match the exact scope of data I want. For data plots I have extneded by thinking I learned that thoughtful design choices  like percentage formatting and consistent labeling  help ensure that visual outputs support the analytical information I want to tell the viewers. I also extended my thinking through modifying tables. By using kable styling in Lab 9
 
 ## Peer Support & Collaboration
 

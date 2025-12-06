@@ -8,7 +8,7 @@ editor: visual
 
 1.  Finish the sentence with another student’s name: "If \[Name of Student\] doesn’t earn an A, then nobody should, because..." Explain your choice and your reasoning.
 
-    If Otis Hunt doesn’t earn an A, then nobody should, because during the in-class activity he was able to explain and teach me concepts that I didn't understand.
+    If Otis Hunt doesn’t earn an A, then nobody should, because during one of the in-class activity I was paired with he was able to explain and teach me concepts that I didn't understand clearly and concisely.
 
 2.  What was the most difficult part of the class for you? List a general topic, a specific problem, a kind of work we did, etc. and explain why.
 
@@ -20,8 +20,8 @@ editor: visual
 
 4.  What part of the class surprised or interested you the most? Explain why.
 
-    The part of the class that surprised me was how we could redo our lab assignments every week as it is also a way to learn from our mistakes and reflect from it. I was able to learn more.
+    The part of the class that surprised me was how we could redo our lab assignments every week as it is also a way to learn from our mistakes and reflect from it. I was able to learn from my mistakes which I otherwise wouldn't have.
 
 5.  Give one piece of advice to a student just beginning a quarter of STAT 331 that will help them be successful in learning.
 
-    I would say to it is helpful to read the readings before class and work on the check-ins beforehand.
+    I would say to it is helpful to read the readings before class and complete on the check-ins beforehand.

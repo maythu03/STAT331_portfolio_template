@@ -246,17 +246,10 @@ teacher_evals_compare
 -   Numeric Example 2
 
 ```{r}
-# Lab 5
-#Getting the crime scene report by filtering the date, city, and type.
-crime_scene_report <- crime_scene_report |>
-  mutate(date = ymd(date)) 
+# Lab 7 Question 7
 
-crime_scene_report |>
-  filter(date == ymd("2018-01-15"),
-         city == "SQL City", 
-         type == "murder") |> #found the crime report
-  pull (description)
-# Revised: Initially jsut filtered the number of the date, but converted into a date-time varaible (demonstrated my ability to work with date variables using the lubridate package (e.g., WD-3 & WD-4).)
+# make sure the scaled column exists
+fish <- fish |> mutate(length_scaled = rescale_01(length))
 
 
 ```
@@ -293,7 +286,7 @@ ca_childcare
 ```{r}
 #| label: wd-4-factor-ex-2
 # Lab 4 Question 7
-# Revised: superseded recod () is superseded so I changed it to case_when()
+# Revised: recode () is superseded so used case_when() instead
 n_regions <- n_distinct(ca_childcare$diff_counties)
 region_palette <- colorRampPalette(RColorBrewer::brewer.pal(12, "Paired"))(max(n_regions, 3))
 
@@ -472,7 +465,6 @@ gym_suspects |>
 ```
 
 
-
 -   `inner_join()` Example 2
 
 ```{r}
@@ -522,6 +514,7 @@ ca_childcare
 # Lab 5
 # Revised: Changed inner_join to anti_join, and still having the same output
 # Did 2 lines of anti_join
+
 # Based on the murderer interview finding who hired him based on his hints.
 
 # Find people who attended SQL Symphony Concert 3 times in Dec 2017 
@@ -662,7 +655,7 @@ The following assignments satisfy the above criteria:
 
 ```{r}
 #| label: r-2-1
-#Challenge 3 Question 2
+# Challenge 3 Question 2
 ggplot(data = teacher_evals_compare, aes(x = sen_level, fill = SET_level)) +
   geom_bar(position = "fill") +
   scale_y_continuous(labels = scales::percent_format()) +   # show % on y-axis
@@ -710,6 +703,7 @@ teacher_evals_clean <- evals |>
 
 ```{r}
 #| label: r-2-3
+# Lab 9
 missing_vals_long <- missing_vals |>
   mutate(across(everything(), as.character)) |> 
   pivot_longer(
@@ -728,15 +722,20 @@ missing_vals_long
 
 ```{r}
 #| label: r-3-example
-# Lab 10 Question 2
-summary_df <- enframe(results, name = NULL, value = "Number_Correct") |>
-  count(Number_Correct, name = "Count") |>
-  complete(Number_Correct = 0:4, fill = list(Count = 0)) |>
-  arrange(Number_Correct) |>
-  mutate(Probability = Count / sum(Count))
+# Lab 8 Question 1
+```{r}
 
-
-
+# Revised: Added input checks for data frame
+# Revised: Revised to use most current form of across () by incorporating ~ and .x
+rescale_column <- function(df, cols) {
+   if (!is.data.frame(df)) {
+    stop("Input 'df' must be a data frame.")
+  }
+  df |>
+    mutate(
+      across(.cols = {{ cols }}, .fns = ~ rescale_01(.x))
+    )
+}
 ```
 
 
@@ -1796,7 +1795,7 @@ t.test(len ~ supp,
 
 ## Revising My Thinking
 
-Earlier in the course, when there was conclusion I just wrote what the table and rows represented. However, through your feedback I expanded my thinking of things like how were the data collected, who collected them, when they were collected, and why there were collected. Initially, I treated code as something personal — as long as it worked for me, I didn’t worry about how others would reproduce it. After your feedback emphasizing reproducibility, I began documenting function headers and table of contents. In Lab 3 I also implemented this idea by changing the table headers to something more informative. Rather than showing "Year 2019" I changed it into "Median Income 2019" which tells the viewers more. I also learned the importance of professonial looking document by adding the "warning:false" and "message:false" Quarto format. I learned to avoid displaying messages related to data import or package loading, as they do not add value for the reader and can make your document appear cluttered. Lastly, before this course, I viewed visualization mainly as an aesthetic step where I make graphs look “nice.” Throughout the course I learned bolding title or adding a border to the plot makes the plot stand out more. 
+Throughout the course, I revised my thinking through feedbacks I got from Lab and incorporate postive comments in my later labs. For example earlier in the course, when there was summary of the data I just wrote what the table and rows represented. However, through feedback I expanded my thinking of things like how were the data collected, who collected them, when they were collected, and why there were collected. Initially, I treated code as something as long as I knew it was fine, I didn’t worry about how others would reproduce it. After feedback emphasizing reproducibility, I began documenting function headers and table of contents. In Lab 3 I also implemented this idea by changing the table headers to something more informative. Rather than showing "Year 2019" I changed it into "Median Income 2019" which tells the viewers more. I also learned the importance of professonial looking document by adding the "warning:false" and "message:false" Quarto format. I learned to avoid displaying messages related to data import or package loading, as they do not add value for the reader and can make your document appear cluttered. Lastly, before this course, I viewed visualization mainly as an aesthetic step where I make graphs look “nice.” Throughout the course I learned bolding title or adding a border to the plot makes the plot stand out more. I was able to do this to tables too. 
 
 
 <!-- How did you revise your thinking throughout the course? How did you revise your thinking on the code examples you have provided in your portfolio? -->
@@ -1807,7 +1806,7 @@ Earlier in the course, when there was conclusion I just wrote what the table and
 
 <!-- How did you extended your thinking throughout the course? How did you extend your thinking on the code examples you have provided in your portfolio? -->
 
-Beyond the course,I extened my thinking through exploring different color palletes. In lab 4 I explored the RColorBrewer package with the Paried palletes. Additionally in Challenge Lab 2 I explored different colors that is beyond just simple colors like "red." An example I extended my thinking was in Lab 4 instead of selecting columns names I simplified it to columns that starts with "mc" because all of the columns I wanted all started with "mc". Throughout the course, I extended my thinking by learning to approach code to answer the question, but as a way to reason through data quality, and communication. In my early work, I focused mostly on producing results that “looked right,” but through feedback and practice, I began thinking more critically about how my code ensured accuracy and clarity. For example, in Lab 5 I had a hard time joining four different tables (facebook event check in, person, driver lincese, income tables). I realized each join defines a logical link between data tables and that the join order determines which observations are retained. For example, in the final version of my code, I first used inner_join() to connect person with drivers_license, then joined that result to income using a shared ssn, and finally used a semi_join() to keep only those people who attended three concerts in December. This process helped me see joins not just as technical operations, but as tools for refining a dataset to match the exact scope of data I want. For data plots I have extneded by thinking I learned that thoughtful design choices  like percentage formatting and consistent labeling  help ensure that visual outputs support the analytical information I want to tell the viewers. I also extended my thinking through modifying tables. By using kable styling in Lab 9
+Beyond the course,I extened my thinking through exploring different color palettes and formatting. For instance, in lab 4 I explored the RColorBrewer package with the Paried palletes. Additionally in Challenge Lab 2 I explored different colors that is beyond just simple colors like "red." An example I extended my thinking was in Lab 4 instead of selecting columns names I simplified it to columns that starts with "mc" because all of the columns I wanted all started with "mc". Throughout the course, I extended my thinking by learning to approach code to answer the question, but as a way to reason through data quality, and communication. In my early work, I focused mostly on producing results that “looked right,” but through feedback and practice, I began thinking more critically about how my code ensured accuracy and clarity. For example, in Lab 5 I had a hard time joining four different tables (facebook event check in, person, driver lincese, income tables). I realized each join defines a logical link between data tables and that the join order determines which observations are retained. For example, in the final version of my code, I first used inner_join() to connect person with drivers_license, then joined that result to income using a shared ssn, and finally used a semi_join() to keep only those people who attended three concerts in December. This process helped me see joins not just as technical operations, but as tools for refining a dataset to match the exact data I want. For data plots I have extended by thinking I learned that thoughtful design choices like percentage formatting and consistent labeling make it more clear. I also extended my thinking through modifying tables. From feedback by using kable styling in Lab 9, I made the headers more meaningful and layout the tables differently to understand the table better. 
 
 ## Peer Support & Collaboration
 
